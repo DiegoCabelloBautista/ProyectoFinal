@@ -41,4 +41,3 @@ GymTrackPro/
 3. **Seguimiento en Vivo**: Cronómetro y registro de series en tiempo real.
 4. **Dashboard**: Visualización de estadísticas y volumen de entrenamiento.
 5. **Idioma**: Interfaz y mensajes completamente en español.
-# ProyectoFinal
