@@ -1,0 +1,18 @@
+{
+  "name": "GymTrack Pro",
+  "short_name": "GymTrack",
+  "description": "Tu aplicación profesional de seguimiento de entrenamiento y gamificación.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0D14",
+  "theme_color": "#8B5CF6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

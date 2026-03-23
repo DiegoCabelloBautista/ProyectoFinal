@@ -5,6 +5,7 @@ interface AuthContextType {
     user: any;
     login: (token: string, userData: any) => void;
     logout: () => void;
+    refreshUser: () => Promise<void>;
     loading: boolean;
 }
 
@@ -13,6 +14,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+
+    const refreshUser = async () => {
+        try {
+            const res = await authApi.getMe();
+            setUser(res.data);
+        } catch (err) {
+            console.error("Error refreshing user:", err);
+        }
+    };
 
     useEffect(() => {
         const checkUser = async () => {
@@ -48,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, logout, refreshUser, loading }}>
             {children}
         </AuthContext.Provider>
     );

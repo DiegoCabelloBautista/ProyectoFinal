@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from ..models import User, ShopItem, UserAchievement, Achievement, db
+from ..models import User, ShopItem, UserAchievement, Achievement, UserItem, db
 
 profile_bp = Blueprint('profile', __name__)
 
@@ -36,6 +36,9 @@ def get_profile():
             'username_color': user.username_color,
             'is_verified': user.is_verified,
             'title': user.title,
+            'streak_shields': user.streak_shields or 0,
+            'xp_booster_multiplier': user.xp_booster_multiplier or 1.0,
+            'xp_booster_sessions': user.xp_booster_sessions or 0,
             'achievements_count': len(achievements),
             'created_at': user.created_at.isoformat()
         }), 200
@@ -105,17 +108,29 @@ def purchase_item(item_id):
     item = ShopItem.query.get_or_404(item_id)
     
     # Validar que el usuario tenga suficientes monedas
-    if user.coins < item.price:
+    if user.coins < (item.price or 0):
         return jsonify({"msg": "No tienes suficientes monedas"}), 400
     
-    # Validar que el usuario tenga el nivel necesario
-    if user.level < item.required_level:
+    # Validar nivel
+    if user.level < (item.required_level or 1):
         return jsonify({"msg": f"Necesitas nivel {item.required_level}"}), 400
     
-    # Restar monedas
-    user.coins -= item.price
-    
-    # Aplicar el item según su tipo
+    # Si no es consumible, revisar si ya lo tiene en su colección
+    if item.item_type != 'consumable':
+        already_owned = UserItem.query.filter_by(user_id=user.id, item_id=item.id).first()
+        if already_owned:
+            # Si ya lo tiene, simplemente lo equipamos gratis
+            pass
+        else:
+            # Si es nuevo, restar monedas y añadir a colección
+            user.coins -= item.price
+            new_purchase = UserItem(user_id=user.id, item_id=item.id)
+            db.session.add(new_purchase)
+    else:
+        # Si es consumible, restar monedas y aplicar directamente
+        user.coins -= item.price
+
+    # Aplicar el item/efecto según su tipo
     if item.item_type == 'avatar':
         user.avatar_icon = item.value
     elif item.item_type == 'color':
@@ -125,13 +140,29 @@ def purchase_item(item_id):
     elif item.item_type == 'badge':
         if item.value == 'verified':
             user.is_verified = True
+    elif item.item_type == 'consumable':
+        # Valor puede ser 'shield', 'multiplier_2.0_sessions_3', etc.
+        if item.value == 'streak_shield':
+            user.streak_shields = (user.streak_shields or 0) + 1
+        elif item.value.startswith('multiplier_'):
+            # Ejemplo: multiplier_2.0_sessions_3
+            try:
+                parts = item.value.split('_')
+                multiplier = float(parts[1])
+                sessions = int(parts[3])
+                user.xp_booster_multiplier = multiplier
+                user.xp_booster_sessions = (user.xp_booster_sessions or 0) + sessions
+            except (IndexError, ValueError):
+                pass
     
     db.session.commit()
     
     return jsonify({
         "msg": f"¡Has comprado {item.name}!",
         "remaining_coins": user.coins,
-        "item_applied": True
+        "item_applied": True,
+        "current_streak_shields": user.streak_shields,
+        "xp_booster_sessions": user.xp_booster_sessions
     }), 200
 
 @profile_bp.route('/achievements', methods=['GET'])

@@ -10,7 +10,25 @@ const RoutineBuilder: React.FC = () => {
     const [allExercises, setAllExercises] = useState<any[]>([]);
     const [search, setSearch] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showAiModal, setShowAiModal] = useState(false);
+    const [aiPrompt, setAiPrompt] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
     const navigate = useNavigate();
+
+    const handleAiGenerate = async () => {
+        if (!aiPrompt.trim()) return;
+        setIsGenerating(true);
+        try {
+            const res = await (routinesApi.generate as any)(aiPrompt);
+            navigate('/routines');
+        } catch (err: any) {
+            console.error(err);
+            const serverMsg = err.response?.data?.msg || "Error de conexión con el servidor";
+            alert(`Fallo del Servidor: ${serverMsg}`);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
     useEffect(() => {
         loadExercises();
@@ -71,14 +89,52 @@ const RoutineBuilder: React.FC = () => {
 
     return (
         <div className="min-h-screen pb-24 text-slate-100 px-6 pt-12">
+            {/* Modal IA */}
+            {showAiModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background-dark/80 backdrop-blur-md">
+                    <div className="bg-white/5 border border-white/10 p-6 rounded-3xl w-full max-w-sm shadow-2xl">
+                        <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+                             <span className="material-icons-round text-primary">auto_awesome</span> Generar con IA
+                        </h3>
+                        <p className="text-sm text-slate-400 mb-4">
+                            Describe tu rutina ideal y Gemini la creará por ti usando los ejercicios de la base de datos.
+                        </p>
+                        <textarea
+                            value={aiPrompt}
+                            onChange={(e) => setAiPrompt(e.target.value)}
+                            className="w-full bg-background-dark/50 border border-white/10 rounded-xl p-4 text-sm focus:border-primary/50 text-white min-h-[120px] mb-4"
+                            placeholder="Ej: Rutina de empuje enfocada en hombros..."
+                        />
+                        <div className="flex gap-2 justify-end">
+                            <button onClick={() => setShowAiModal(false)} className="px-4 py-2 text-slate-400 font-bold text-sm">Cerrar</button>
+                            <button 
+                                onClick={handleAiGenerate} 
+                                disabled={isGenerating || !aiPrompt.trim()}
+                                className="bg-primary text-background-dark px-6 py-2 rounded-xl font-bold text-sm flex items-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+                            >
+                                {isGenerating ? <div className="w-4 h-4 border-2 border-background-dark border-t-white animate-spin rounded-full"></div> : 'Generar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-2xl font-bold tracking-tight">Crear Rutina</h1>
-                <button
-                    onClick={() => navigate(-1)}
-                    className="text-slate-400 font-medium"
-                >
-                    Cancelar
-                </button>
+                <div className="flex items-center gap-4">
+                    <button 
+                        onClick={() => setShowAiModal(true)}
+                        className="bg-primary/20 text-primary border border-primary/30 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 active:scale-95 transition-all"
+                    >
+                         <span className="material-icons-round text-sm">auto_awesome</span> IA
+                    </button>
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="text-slate-400 font-medium text-sm"
+                    >
+                        Cancelar
+                    </button>
+                </div>
             </div>
 
             <div className="space-y-6">

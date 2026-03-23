@@ -109,3 +109,70 @@ def toggle_publish(id: int):
     db.session.commit()
     state = 'publicada' if routine.is_public else 'privada'
     return jsonify({'msg': f'Rutina {state}', 'is_public': routine.is_public}), 200
+
+@routines_bp.route('/generate', methods=['POST'])
+@jwt_required()
+def generate_routine():
+    """Generador Inteligente de Rutinas (Cerebro Local + Fallback IA)"""
+    import random
+    from sqlalchemy import or_
+    from ..models import Routine, RoutineExercise, Exercise, db
+    
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    prompt = data.get('prompt', '').lower()
+    
+    # ... logic ...
+    keywords = {
+        'pecho': ['pecho', 'chest', 'empuje', 'push', 'press'],
+        'espalda': ['espalda', 'back', 'tirón', 'pull', 'remo'],
+        'pierna': ['pierna', 'leg', 'sentadilla', 'cuádriceps', 'glúteo'],
+        'brazo': ['brazo', 'arm', 'bíceps', 'tríceps', 'bícep', 'trícep'],
+        'hombro': ['hombro', 'shoulder', 'militar'],
+        'core': ['core', 'abdomen', 'abs', 'abdominales']
+    }
+
+    target_muscles = []
+    for muscle, words in keywords.items():
+        if any(w in prompt for w in words):
+            target_muscles.append(muscle)
+
+    # Buscar ejercicios que coincidan con los keywords detectados
+    if target_muscles:
+        available_exercises = Exercise.query.filter(
+            or_(*[Exercise.muscle_group.ilike(f'%{m}%') for m in target_muscles])
+        ).all()
+    else:
+        # Si no detecta nada o pide Full Body, mezclamos un poco de todo
+        available_exercises = Exercise.query.all()
+
+    if not available_exercises:
+        available_exercises = Exercise.query.all()
+
+    # Seleccionar 5-6 ejercicios aleatorios del subconjunto o de todo el catálogo
+    num_to_pick = min(len(available_exercises), random.randint(5, 7))
+    selected = random.sample(available_exercises, num_to_pick)
+
+    # Crear la rutina con un nombre chulo basado en el prompt
+    routine_name = f"Rutina {data.get('prompt', 'Nueva').title()}"
+    new_routine = Routine(
+        user_id=user_id, 
+        name=routine_name[:64], 
+        description="Generada por el Asistente Inteligente de GymTrackPro.",
+        is_public=False
+    )
+    db.session.add(new_routine)
+    db.session.flush()
+
+    for i, ex in enumerate(selected):
+        re = RoutineExercise(
+            routine_id=new_routine.id,
+            exercise_id=ex.id,
+            order=i,
+            sets=random.choice([3, 4]),
+            reps_target=random.choice(['8-10', '10-12', '12-15'])
+        )
+        db.session.add(re)
+        
+    db.session.commit()
+    return jsonify({"msg": "Éxito", "id": new_routine.id, "name": new_routine.name}), 201

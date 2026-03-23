@@ -44,6 +44,23 @@ const Analytics: React.FC = () => {
 
     const COLORS = ['#00C9FF', '#92FE9D', '#F093FB', '#FFD140', '#FF6B9D'];
 
+    const handleExportCsv = async () => {
+        try {
+            const res = await analyticsApi.exportCsv();
+            const blob = new Blob([res.data], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'historial_gymtrack.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error('Error exportando CSV', error);
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-background-dark flex items-center justify-center">
@@ -68,8 +85,15 @@ const Analytics: React.FC = () => {
                         <p className="text-xs text-slate-400">Visualiza tu progreso</p>
                     </div>
                 </div>
-                <span className="material-icons-round text-primary text-3xl">insights</span>
+                <button
+                    onClick={handleExportCsv}
+                    className="p-2 bg-primary/20 text-primary border border-primary/30 rounded-xl flex items-center gap-2 font-bold text-sm hover:bg-primary/30 transition-colors"
+                >
+                    <span className="material-icons-round text-sm">download</span>
+                    CSV
+                </button>
             </header>
+
 
             <main className="px-6 space-y-6 mt-6">
                 {/* Stats Summary Cards */}

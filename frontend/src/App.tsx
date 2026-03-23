@@ -10,6 +10,7 @@ import RoutineList from './components/routines/RoutineList';
 import RoutineBuilder from './components/routines/RoutineBuilder';
 import WorkoutLogger from './components/routines/WorkoutLogger';
 import CommunityPage from './components/community/CommunityPage';
+import PublicProfile from './components/profile/PublicProfile';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     const { user, loading } = useAuth();
@@ -129,6 +130,14 @@ function App() {
                                 <ProtectedRoute>
                                     <CommunityPage />
                                     <BottomNav />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/user/:id"
+                            element={
+                                <ProtectedRoute>
+                                    <PublicProfile />
                                 </ProtectedRoute>
                             }
                         />

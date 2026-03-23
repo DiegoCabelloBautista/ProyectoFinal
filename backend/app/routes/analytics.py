@@ -253,3 +253,54 @@ def get_weekly_volume():
     ]
     
     return jsonify(result), 200
+
+@analytics_bp.route('/export-csv', methods=['GET'])
+@jwt_required()
+def export_csv():
+    """Genera y descarga un archivo CSV con el historial de entrenamiento."""
+    import csv
+    import io
+    from flask import Response
+    
+    user_id = get_jwt_identity()
+    
+    # Obtener logs
+    logs = db.session.query(
+        WorkoutSession.start_time,
+        Exercise.name,
+        WorkoutLog.set_number,
+        WorkoutLog.weight,
+        WorkoutLog.reps,
+        WorkoutLog.rpe
+    ).join(
+        WorkoutLog, WorkoutSession.id == WorkoutLog.session_id
+    ).join(
+        Exercise, Exercise.id == WorkoutLog.exercise_id
+    ).filter(
+        WorkoutSession.user_id == user_id
+    ).order_by(
+        WorkoutSession.start_time.desc(), WorkoutLog.set_number
+    ).all()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    writer.writerow(['Fecha', 'Ejercicio', 'Serie', 'Peso (kg)', 'Repeticiones', 'RPE'])
+    
+    for log in logs:
+        writer.writerow([
+            log.start_time.strftime('%Y-%m-%d %H:%M') if log.start_time else 'N/A',
+            log.name,
+            log.set_number,
+            log.weight,
+            log.reps,
+            log.rpe or ''
+        ])
+    
+    output.seek(0)
+    
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-disposition": "attachment; filename=historial_entrenamiento.csv"}
+    )

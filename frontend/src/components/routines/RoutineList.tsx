@@ -45,18 +45,88 @@ const RoutineList: React.FC = () => {
         }
     };
 
+    const [showAiModal, setShowAiModal] = useState(false);
+    const [prompt, setPrompt] = useState('');
+    const [generating, setGenerating] = useState(false);
+
     if (loading) return <div className="text-center py-10">Cargando rutinas...</div>;
 
+    const handleAIGenerate = async () => {
+        if (!prompt.trim()) return;
+        setGenerating(true);
+        try {
+            await routinesApi.generate(prompt);
+            await loadRoutines();
+            setShowAiModal(false);
+            setPrompt('');
+        } catch (err) {
+            console.error('Error generando rutina con IA', err);
+            alert('¡Ups! La IA se ha quedado sin aliento o no tienes la API Key configurada.');
+        } finally {
+            setGenerating(false);
+        }
+    };
+
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 relative">
+            {/* Modal de IA (Mejora) */}
+            {showAiModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background-dark/80 backdrop-blur-sm">
+                    <div className="bg-white/5 border border-white/10 p-6 rounded-3xl w-full max-w-sm shadow-2xl">
+                        <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+                            <span className="material-icons-round text-primary">auto_awesome</span>
+                            Generador IA
+                        </h3>
+                        <p className="text-sm text-slate-400 mb-4">
+                            Describe cómo quieres que sea tu rutina. 
+                            Ej: <span className="text-slate-200">"Quiero un día demoledor de pierna enfocado en glúteos"</span>.
+                        </p>
+                        <textarea
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            placeholder="Tu petición para el Coach Virtual..."
+                            className="w-full bg-background-dark/50 border border-white/10 rounded-xl p-4 text-sm focus:outline-none focus:border-primary/50 text-white min-h-[100px] mb-4"
+                        />
+                        <div className="flex gap-2 justify-end">
+                            <button
+                                onClick={() => setShowAiModal(false)}
+                                className="px-4 py-2 rounded-xl text-sm font-bold text-slate-400 hover:text-white"
+                                disabled={generating}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleAIGenerate}
+                                disabled={generating || !prompt.trim()}
+                                className="bg-primary text-background-dark px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {generating ? (
+                                    <><div className="w-4 h-4 border-2 border-background-dark/50 border-t-background-dark rounded-full animate-spin"/> Creando...</>
+                                ) : (
+                                    <>Crear Rutina</>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex items-center justify-between mb-6 px-6">
                 <h2 className="text-xl font-bold">Mis Rutinas</h2>
-                <button
-                    onClick={() => navigate('/routines/new')}
-                    className="text-primary text-sm font-bold flex items-center gap-1"
-                >
-                    <span className="material-icons-round">add</span> Nueva Rutina
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setShowAiModal(true)}
+                        className="bg-primary/20 text-primary px-3 py-1.5 rounded-xl text-xs font-bold border border-primary/30 flex items-center gap-1 active:scale-95 transition-all"
+                    >
+                        <span className="material-icons-round text-sm">auto_awesome</span> IA
+                    </button>
+                    <button
+                        onClick={() => navigate('/routines/new')}
+                        className="bg-white/10 text-white px-3 py-1.5 rounded-xl text-xs font-bold border border-white/10 flex items-center gap-1 active:scale-95 transition-all"
+                    >
+                        <span className="material-icons-round text-sm">add</span> Manual
+                    </button>
+                </div>
             </div>
 
             {routines.length === 0 ? (

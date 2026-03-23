@@ -34,6 +34,7 @@ export const routinesApi = {
     getAll: () => api.get('/routines'),
     getById: (id: number) => api.get(`/routines/${id}`),
     create: (data: any) => api.post('/routines', data),
+    generate: (prompt: string) => api.post('/routines/generate', { prompt }),
     delete: (id: number) => api.delete(`/routines/${id}`),
     togglePublish: (id: number) => api.patch(`/routines/${id}/publish`),
 };
@@ -58,6 +59,7 @@ export const analyticsApi = {
     getHeatmap: (days: number = 365) => api.get('/analytics/heatmap', { params: { days } }),
     getStatsSummary: () => api.get('/analytics/stats-summary'),
     getWeeklyVolume: (weeks: number = 12) => api.get('/analytics/weekly-volume', { params: { weeks } }),
+    exportCsv: () => api.get('/analytics/export-csv', { responseType: 'blob' }),
 };
 
 export const profileApi = {
@@ -74,6 +76,9 @@ export const communityApi = {
     toggleLike: (routineId: number) => api.post(`/community/routines/${routineId}/like`),
     saveRoutine: (routineId: number) => api.post(`/community/routines/${routineId}/save`),
     getRoutineExercises: (routineId: number) => api.get(`/community/routines/${routineId}/exercises`),
+    getLeaderboard: () => api.get('/community/leaderboard'),
+    toggleFollow: (userId: number) => api.post(`/community/users/${userId}/follow`),
+    getUserProfile: (userId: number) => api.get(`/community/users/${userId}`),
 };
 
 export default api;

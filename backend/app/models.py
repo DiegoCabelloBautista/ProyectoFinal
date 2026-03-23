@@ -2,6 +2,13 @@ from . import db
 from datetime import datetime, date, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# Tabla de asociación para Seguidores (Follows)
+followers = db.Table('followers',
+    db.Column('follower_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+    db.Column('followed_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+    db.Column('created_at', db.DateTime, default=datetime.utcnow)
+)
+
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -11,24 +18,37 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Gamificación
-    xp = db.Column(db.Integer, default=0)  # Puntos de experiencia
-    level = db.Column(db.Integer, default=1)  # Nivel del usuario
-    coins = db.Column(db.Integer, default=0)  # Monedas virtuales para canjear
+    xp = db.Column(db.Integer, default=0)
+    level = db.Column(db.Integer, default=1)
+    coins = db.Column(db.Integer, default=0)
 
     # Rachas de entrenamiento
-    current_streak = db.Column(db.Integer, default=0)  # Días consecutivos activos
-    longest_streak = db.Column(db.Integer, default=0)  # Mejor racha histórica
-    last_workout_date = db.Column(db.Date, default=None)  # Último día con sesión
+    current_streak = db.Column(db.Integer, default=0)
+    longest_streak = db.Column(db.Integer, default=0)
+    last_workout_date = db.Column(db.Date, default=None)
     
     # Personalización Premium
-    avatar_icon = db.Column(db.String(50), default='person')  # Icono de avatar
-    username_color = db.Column(db.String(20), default='#00C9FF')  # Color del nombre
-    is_verified = db.Column(db.Boolean, default=False)  # Badge verificado
-    title = db.Column(db.String(50), default=None)  # Título (ej: "Iron Warrior")
+    avatar_icon = db.Column(db.String(50), default='person')
+    username_color = db.Column(db.String(20), default='#00C9FF')
+    is_verified = db.Column(db.Boolean, default=False)
+    title = db.Column(db.String(50), default=None)
+    
+    # Consumibles y Colecciones
+    streak_shields = db.Column(db.Integer, default=0)
+    xp_booster_multiplier = db.Column(db.Float, default=1.0)
+    xp_booster_sessions = db.Column(db.Integer, default=0)
 
     routines = db.relationship('Routine', backref='author', lazy='dynamic')
     sessions = db.relationship('WorkoutSession', backref='user', lazy='dynamic')
     achievements = db.relationship('UserAchievement', backref='user', lazy='dynamic')
+    owned_items = db.relationship('UserItem', backref='owner', lazy='dynamic')
+    
+    # Relación M:N de seguidores
+    followed = db.relationship(
+        'User', secondary=followers,
+        primaryjoin=(followers.c.follower_id == id),
+        secondaryjoin=(followers.c.followed_id == id),
+        backref=db.backref('followers', lazy='dynamic'), lazy='dynamic')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -37,78 +57,70 @@ class User(db.Model):
         return check_password_hash(self.password_hash, password)
     
     def add_xp(self, amount):
-        """Añadir XP y subir de nivel si es necesario"""
+        """Añadir XP aplicando multiplicadores si existen"""
+        final_xp = amount
+        if self.xp_booster_sessions > 0:
+            final_xp = int(amount * self.xp_booster_multiplier)
+            self.xp_booster_sessions -= 1
+            if self.xp_booster_sessions == 0:
+                self.xp_booster_multiplier = 1.0
+
         if self.xp is None: self.xp = 0
         if self.level is None: self.level = 1
         if self.coins is None: self.coins = 0
         
-        self.xp += amount
+        self.xp += final_xp
         new_level = self.calculate_level()
+        
+        res = {'level_up': False, 'applied_xp': final_xp}
         
         # Si sube de nivel, dar recompensas
         if new_level > self.level:
             levels_gained = new_level - self.level
             self.level = new_level
-            self.coins += levels_gained * 10  # 10 monedas por nivel
-            return {'level_up': True, 'new_level': new_level, 'coins_earned': levels_gained * 10}
+            self.coins += levels_gained * 10
+            res.update({'level_up': True, 'new_level': new_level, 'coins_earned': levels_gained * 10})
         
-        return {'level_up': False}
+        return res
     
     def calculate_level(self):
-        """Calcular nivel basado en XP (fórmula exponencial)"""
-        # Nivel = raíz cuadrada de (XP / 100)
         import math
         current_xp = self.xp if self.xp is not None else 0
         return int(math.sqrt(current_xp / 100)) + 1
     
     def xp_for_next_level(self):
-        """Calcular XP necesaria para el siguiente nivel"""
         current_level = self.level if self.level is not None else 1
         next_level = current_level + 1
         return (next_level - 1) ** 2 * 100
     
     def xp_progress_percentage(self):
-        """Porcentaje de progreso hacia el siguiente nivel"""
         current_level = self.level if self.level is not None else 1
         current_xp = self.xp if self.xp is not None else 0
-        
         current_level_xp = (current_level - 1) ** 2 * 100
         next_level_xp = self.xp_for_next_level()
-        
-        if next_level_xp == current_level_xp: return 100 # Evitar div por cero si algo raro pasa
-        
+        if next_level_xp == current_level_xp: return 100
         progress = ((current_xp - current_level_xp) / (next_level_xp - current_level_xp)) * 100
         return min(progress, 100)
 
     def update_streak(self) -> dict:
-        """Actualiza la racha diaria al finalizar una sesión.
-        
-        Reglas:
-        - Si ya entrenó hoy → no modifica (evita doble conteo).
-        - Si entrenó ayer → incrementa la racha.
-        - Si no entrenó ayer ni hoy → resetea a 1.
-        
-        Returns dict con current_streak, longest_streak y si es una nueva racha.
-        """
         today = date.today()
         yesterday = today - timedelta(days=1)
+        shield_used = False
 
         if self.last_workout_date == today:
-            # Ya se registró sesión hoy, no hace falta actualizar
-            return {
-                'current_streak': self.current_streak,
-                'longest_streak': self.longest_streak,
-                'streak_updated': False,
-            }
+            return {'current_streak': self.current_streak, 'longest_streak': self.longest_streak, 'streak_updated': False}
 
         if self.last_workout_date == yesterday:
             self.current_streak = (self.current_streak or 0) + 1
         else:
-            # Racha rota o primera sesión
-            self.current_streak = 1
+            # Si rompe racha, intentar usar escudo
+            if self.use_streak_shield():
+                self.current_streak = (self.current_streak or 0) + 1
+                shield_used = True
+            else:
+                self.current_streak = 1
 
         self.last_workout_date = today
-
         if self.current_streak > (self.longest_streak or 0):
             self.longest_streak = self.current_streak
 
@@ -116,7 +128,14 @@ class User(db.Model):
             'current_streak': self.current_streak,
             'longest_streak': self.longest_streak,
             'streak_updated': True,
+            'shield_used': shield_used
         }
+
+    def use_streak_shield(self) -> bool:
+        if (self.streak_shields or 0) > 0:
+            self.streak_shields -= 1
+            return True
+        return False
 
 class Exercise(db.Model):
     __tablename__ = 'exercises'
@@ -168,6 +187,18 @@ class WorkoutLog(db.Model):
     rpe = db.Column(db.Integer)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
+class BodyMetric(db.Model):
+    __tablename__ = 'body_metrics'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False, default=date.today)
+    weight = db.Column(db.Float)  # Peso corporal
+    body_fat = db.Column(db.Float) # Porcentaje de grasa
+    arm_cm = db.Column(db.Float)   # Bíceps
+    waist_cm = db.Column(db.Float) # Cintura
+    chest_cm = db.Column(db.Float) # Pecho
+    leg_cm = db.Column(db.Float)   # Piernas
+
 # Sistema de Logros/Achievements
 class Achievement(db.Model):
     __tablename__ = 'achievements'
@@ -196,11 +227,21 @@ class ShopItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(255))
-    item_type = db.Column(db.String(50))  # 'avatar', 'color', 'title', 'badge'
-    value = db.Column(db.String(100))  # El valor del item (ej: color hex, icono, etc)
+    item_type = db.Column(db.String(50))  # 'avatar', 'color', 'title', 'badge', 'consumable'
+    value = db.Column(db.String(100))  # El valor del item (ej: color hex, icono, 'multiplier_2.0', etc)
     price = db.Column(db.Integer, nullable=False)  # Precio en monedas
     is_active = db.Column(db.Boolean, default=True)
     required_level = db.Column(db.Integer, default=1)  # Nivel mínimo para desbloquear
+
+class UserItem(db.Model):
+    """Items que un usuario ya posee en su colección."""
+    __tablename__ = 'user_items'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey('shop_items.id'), nullable=False)
+    purchased_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    item = db.relationship('ShopItem')
 
 
 # ── Comunidad ──────────────────────────────────────────────────────────────────

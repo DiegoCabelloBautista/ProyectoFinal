@@ -219,9 +219,28 @@ const ProfileTab = ({ profile, achievements }: any) => (
             <div className="space-y-3">
                 <InfoRow label="Email" value={profile.email} />
                 <InfoRow label="Miembro desde" value={new Date(profile.created_at).toLocaleDateString()} />
+                <div className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+                    <span className="text-sm text-slate-400">Escudos de racha disponibles</span>
+                    <div className="flex items-center gap-1">
+                        <span className="text-sm font-bold text-blue-400">{profile.streak_shields}</span>
+                        <span className="material-icons-round text-blue-400 text-sm">shield</span>
+                    </div>
+                </div>
                 <InfoRow label="Logros desbloqueados" value={`${achievements.length}`} />
             </div>
         </div>
+
+        {profile.xp_booster_sessions > 0 && (
+            <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-2xl p-6">
+                <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
+                    <span className="material-icons-round text-purple-400">bolt</span>
+                    Potenciador de XP Activo
+                </h3>
+                <p className="text-sm text-slate-300">
+                    ¡Multiplicador de <span className="text-purple-400 font-bold">x{profile.xp_booster_multiplier}</span> activo por las próximas <span className="font-bold text-white">{profile.xp_booster_sessions}</span> sesiones!
+                </p>
+            </div>
+        )}
 
         <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">

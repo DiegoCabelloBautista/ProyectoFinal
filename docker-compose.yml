@@ -20,6 +20,8 @@ services:
       DATABASE_URL: mysql+pymysql://root:8326@db/gymtrack_pro
       SECRET_KEY: gymtrack-secret-key
       JWT_SECRET_KEY: jwt-secret-key
+      GEMINI_API_KEY: "AIzaSyC0izqn_6wupC7hbVgRp9hlRuFQvSjaKSE" # <-- Pon aquí tu clave de https://aistudio.google.com/
+      FLASK_DEBUG: "1"
     ports:
       - "5000:5000"
     depends_on:

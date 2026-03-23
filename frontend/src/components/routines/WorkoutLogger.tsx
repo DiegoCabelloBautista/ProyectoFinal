@@ -2,14 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { workoutsApi, routinesApi } from '../../services/api';
 import { Check, Clock, ChevronRight, Activity } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const WorkoutLogger: React.FC = () => {
     const { routineId } = useParams();
+    const { refreshUser } = useAuth();
     const [routine, setRoutine] = useState<any>(null);
     const [sessionId, setSessionId] = useState<number | null>(null);
     const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
     const [sets, setSets] = useState<any[]>([]);
     const [timer, setTimer] = useState(0);
+    const [restTimer, setRestTimer] = useState<number | null>(null);
     const [loadingSession, setLoadingSession] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
     const navigate = useNavigate();
@@ -18,6 +21,7 @@ const WorkoutLogger: React.FC = () => {
         startWorkout();
         const interval = setInterval(() => {
             setTimer(t => t + 1);
+            setRestTimer(r => (r !== null && r > 0 ? r - 1 : (r === 0 ? null : r)));
         }, 1000);
         return () => clearInterval(interval);
     }, []);
@@ -59,6 +63,8 @@ const WorkoutLogger: React.FC = () => {
         }
     };
 
+    const [isFinishing, setIsFinishing] = useState(false);
+
     const logSet = async (weight: number, reps: number) => {
         if (!sessionId || !routine) return;
 
@@ -74,18 +80,24 @@ const WorkoutLogger: React.FC = () => {
                 reps
             });
             setSets([...sets, { weight, reps }]);
+            setRestTimer(90); // Inicia descanso de 90 segundos por defecto
         } catch (err) {
             console.error('Error al registrar la serie:', err);
         }
     };
 
     const finishWorkout = async () => {
-        if (!sessionId) return;
+        if (!sessionId || isFinishing) return;
+        
+        setIsFinishing(true);
         try {
             await workoutsApi.finishSession(sessionId);
+            await refreshUser();
             navigate('/');
         } catch (err) {
             console.error('Error al finalizar el entrenamiento:', err);
+            alert('No se pudo finalizar la sesión. Comprueba tu conexión.');
+            setIsFinishing(false);
         }
     };
 
@@ -127,9 +139,10 @@ const WorkoutLogger: React.FC = () => {
                 </div>
                 <button
                     onClick={finishWorkout}
-                    className="bg-primary/20 text-primary px-4 py-2 rounded-xl font-bold text-sm"
+                    disabled={isFinishing}
+                    className="bg-primary/20 text-primary px-4 py-2 rounded-xl font-bold text-sm disabled:opacity-50"
                 >
-                    Finalizar
+                    {isFinishing ? 'Finalizando...' : 'Finalizar'}
                 </button>
             </div>
 
@@ -189,25 +202,48 @@ const WorkoutLogger: React.FC = () => {
                 )}
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 p-6 glass-nav flex gap-4 z-50">
-                <button
-                    className="flex-1 bg-white/5 border border-white/10 text-slate-100 font-bold py-4 rounded-xl flex items-center justify-center gap-2"
-                    onClick={() => {
-                        setCurrentExerciseIndex(idx => Math.max(0, idx - 1));
-                        setSets([]);
-                    }}
-                >
-                    Anterior
-                </button>
-                <button
-                    className="flex-1 bg-primary text-background-dark font-bold py-4 rounded-xl flex items-center justify-center gap-2"
-                    onClick={() => {
-                        setCurrentExerciseIndex(idx => idx + 1);
-                        setSets([]);
-                    }}
-                >
-                    Siguiente <ChevronRight className="w-5 h-5" />
-                </button>
+            <div className="fixed bottom-0 left-0 right-0 p-6 glass-nav flex flex-col gap-4 z-50">
+                {restTimer !== null && restTimer > 0 && (
+                    <div className="bg-primary/20 border border-primary/30 rounded-2xl p-4 flex items-center justify-between shadow-[0_0_20px_rgba(139,92,246,0.2)] animate-in slide-in-from-bottom-5">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/20 rounded-xl text-primary animate-pulse">
+                                <Clock className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-primary font-bold uppercase tracking-wider">Descanso</p>
+                                <p className="text-2xl font-bold text-white font-mono">{formatTime(restTimer)}</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={() => setRestTimer(r => (r || 0) + 30)} className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center font-bold text-sm text-slate-200">
+                                +30
+                            </button>
+                            <button onClick={() => setRestTimer(null)} className="px-4 h-10 rounded-xl bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center font-bold text-sm text-slate-200">
+                                Saltar
+                            </button>
+                        </div>
+                    </div>
+                )}
+                <div className="flex gap-4">
+                    <button
+                        className="flex-1 bg-white/5 border border-white/10 text-slate-100 font-bold py-4 rounded-xl flex items-center justify-center gap-2"
+                        onClick={() => {
+                            setCurrentExerciseIndex(idx => Math.max(0, idx - 1));
+                            setSets([]);
+                        }}
+                    >
+                        Anterior
+                    </button>
+                    <button
+                        className="flex-1 bg-primary text-background-dark font-bold py-4 rounded-xl flex items-center justify-center gap-2"
+                        onClick={() => {
+                            setCurrentExerciseIndex(idx => idx + 1);
+                            setSets([]);
+                        }}
+                    >
+                        Siguiente <ChevronRight className="w-5 h-5" />
+                    </button>
+                </div>
             </div>
         </div>
     );

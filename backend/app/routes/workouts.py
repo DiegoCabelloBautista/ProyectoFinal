@@ -47,7 +47,7 @@ def finish_session(id):
     xp_gained = 20
     
     # XP adicional por volumen (1 XP por cada 100kg levantados)
-    total_volume = sum(log.weight * log.reps for log in logs)
+    total_volume = sum((log.weight or 0) * (log.reps or 0) for log in logs)
     xp_gained += int(total_volume / 100)
     
     # XP adicional por número de ejercicios únicos
@@ -65,11 +65,14 @@ def finish_session(id):
     
     response = {
         "msg": "Sesión finalizada",
-        "xp_gained": xp_gained,
+        "xp_gained_base": xp_gained,
+        "xp_gained_total": level_up_info['applied_xp'],
+        "xp_boosted": level_up_info['applied_xp'] > xp_gained,
         "total_xp": user.xp,
         "level": user.level,
         "current_streak": streak_info['current_streak'],
         "longest_streak": streak_info['longest_streak'],
+        "shield_used": streak_info.get('shield_used', False),
         # True solo cuando se bate el récord personal de racha
         "streak_milestone": streak_info['streak_updated'] and streak_info['longest_streak'] > prev_longest,
     }
@@ -125,7 +128,7 @@ def get_session_detail(id):
     ).all()
     
     # Calcular volumen total
-    total_volume = sum(log.weight * log.reps for log in logs)
+    total_volume = sum((log.weight or 0) * (log.reps or 0) for log in logs)
     
     # Agrupar por ejercicio
     from collections import defaultdict
