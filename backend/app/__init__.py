@@ -14,6 +14,16 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
 
     db.init_app(app)
+    
+    # Verificar conexión a la DB al arrancar
+    with app.app_context():
+        try:
+            from sqlalchemy import text
+            db.session.execute(text('SELECT 1'))
+            app.logger.info("✅ Conexión a la base de datos establecida correctamente")
+        except Exception as e:
+            app.logger.error(f"❌ FALLO DE CONEXIÓN A DB: {str(e)}")
+
     migrate.init_app(app, db)
     jwt.init_app(app)
     

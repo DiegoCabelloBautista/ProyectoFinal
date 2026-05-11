@@ -149,7 +149,7 @@ const TrainingCalendar: React.FC = () => {
             <div className="grid grid-cols-3 gap-3">
                 {[
                     { label: 'Total', value: trainedDates.size, icon: 'fitness_center', color: 'bg-emerald-50 text-emerald-500' },
-                    { label: 'Mes', value: sessionsThisMonth, icon: 'calendar_today', color: 'bg-blue-50 text-blue-500' },
+                    { label: 'Mes', value: sessionsThisMonth, icon: 'calendar_today', color: 'bg-emerald-50 text-emerald-600' },
                     { label: 'Racha', value: user?.longest_streak ?? 0, icon: 'local_fire_department', color: 'bg-orange-50 text-orange-500' },
                 ].map(s => (
                     <div key={s.label} className="bg-white border border-slate-100 rounded-2xl p-3 text-center shadow-sm">

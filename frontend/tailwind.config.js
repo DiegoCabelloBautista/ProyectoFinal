@@ -11,7 +11,7 @@ export default {
         primary: "#10B981", // Emerald 500
         "primary-light": "#34D399", // Emerald 400
         "primary-dark": "#059669", // Emerald 600
-        "accent": "#3B82F6", // Blue 500
+        "accent": "#34D399", // Emerald 400
         "surface": "#FFFFFF",
         "surface-2": "#F8FAFC",
         "surface-3": "#F1F5F9",
@@ -43,8 +43,8 @@ export default {
           "50%": { transform: "translateY(-8px)" },
         },
         "pulse-glow": {
-          "0%, 100%": { boxShadow: "0 0 10px rgba(139,92,246,0.3)" },
-          "50%": { boxShadow: "0 0 25px rgba(139,92,246,0.6)" },
+          "0%, 100%": { boxShadow: "0 0 10px rgba(16,185,129,0.3)" },
+          "50%": { boxShadow: "0 0 25px rgba(16,185,129,0.6)" },
         },
         "slide-up": {
           from: { opacity: "0", transform: "translateY(16px)" },

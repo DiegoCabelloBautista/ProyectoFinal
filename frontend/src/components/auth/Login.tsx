@@ -33,7 +33,7 @@ const Login: React.FC = () => {
         <div className="min-h-screen flex items-center justify-center px-5 relative overflow-hidden bg-white">
             {/* Background orbs */}
             <div className="orb w-96 h-96" style={{ background: '#10B981', top: '-10%', left: '-15%', opacity: 0.15 }} />
-            <div className="orb w-72 h-72" style={{ background: '#3B82F6', bottom: '-5%', right: '-10%', opacity: 0.12 }} />
+            <div className="orb w-72 h-72" style={{ background: '#34D399', bottom: '-5%', right: '-10%', opacity: 0.12 }} />
 
             {/* Card */}
             <div className="relative z-10 w-full max-w-sm animate-slide-up">
@@ -41,7 +41,7 @@ const Login: React.FC = () => {
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 animate-pulse-glow"
                         style={{
-                            background: 'linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(59,130,246,0.1) 100%)',
+                            background: 'linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(52,211,153,0.1) 100%)',
                             border: '1px solid rgba(16,185,129,0.25)',
                         }}>
                         <span className="material-icons-round text-3xl text-primary">fitness_center</span>
@@ -118,7 +118,7 @@ const Login: React.FC = () => {
 
                 <p className="text-center mt-5 text-slate-500 text-sm">
                     ¿No tienes cuenta?{' '}
-                    <Link to="/register" className="font-bold" style={{ color: '#A78BFA' }}>
+                    <Link to="/register" className="font-bold hover:opacity-80 transition-opacity" style={{ color: '#10B981' }}>
                         Regístrate gratis
                     </Link>
                 </p>

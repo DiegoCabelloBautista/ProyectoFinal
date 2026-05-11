@@ -7,7 +7,7 @@
 :root {
   --color-primary: #10B981;
   --color-primary-light: #34D399;
-  --color-accent: #3B82F6;
+  --color-accent: #34D399;
   --color-bg: #FFFFFF;
   --color-surface: #F8FAFC;
   --color-surface-2: #F1F5F9;
@@ -68,7 +68,7 @@ body {
 
 /* ── Gradient Text ── */
 .gradient-text {
-  background: linear-gradient(135deg, #10B981 0%, #3B82F6 100%);
+  background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

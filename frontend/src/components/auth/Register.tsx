@@ -30,14 +30,14 @@ const Register: React.FC = () => {
         <div className="min-h-screen flex items-center justify-center px-5 relative overflow-hidden bg-white">
             {/* Background orbs */}
             <div className="orb w-96 h-96" style={{ background: '#10B981', top: '-15%', right: '-10%', opacity: 0.15 }} />
-            <div className="orb w-72 h-72" style={{ background: '#3B82F6', bottom: '-10%', left: '-5%', opacity: 0.12 }} />
+            <div className="orb w-72 h-72" style={{ background: '#34D399', bottom: '-10%', left: '-5%', opacity: 0.12 }} />
 
             <div className="relative z-10 w-full max-w-sm animate-slide-up">
                 {/* Logo mark */}
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 shadow-lg shadow-emerald-500/10"
                         style={{
-                            background: 'linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(59,130,246,0.1) 100%)',
+                            background: 'linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(52,211,153,0.1) 100%)',
                             border: '1px solid rgba(16,185,129,0.25)',
                         }}>
                         <span className="material-icons-round text-3xl text-primary">person_add</span>
@@ -114,7 +114,7 @@ const Register: React.FC = () => {
                                 />
                             </div>
                             <label htmlFor="terms" className="text-xs text-slate-400 leading-tight">
-                                He leído y acepto los <Link to="/terms" className="font-semibold transition-colors" style={{ color: '#A78BFA' }}>Términos de Uso</Link> y la Política de Privacidad de GymTrack Pro.
+                                He leído y acepto los <Link to="/terms" className="font-semibold hover:underline transition-all" style={{ color: '#10B981' }}>Términos de Uso</Link> y la Política de Privacidad de GymTrack Pro.
                             </label>
                         </div>
 
@@ -137,7 +137,7 @@ const Register: React.FC = () => {
 
                 <p className="text-center mt-5 text-slate-500 text-sm">
                     ¿Ya tienes cuenta?{' '}
-                    <Link to="/login" className="font-bold" style={{ color: '#A78BFA' }}>
+                    <Link to="/login" className="font-bold hover:opacity-80 transition-opacity" style={{ color: '#10B981' }}>
                         Inicia sesión
                     </Link>
                 </p>

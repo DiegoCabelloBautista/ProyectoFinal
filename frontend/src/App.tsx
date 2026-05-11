@@ -173,7 +173,7 @@ function App() {
                             element={
                                 <ProtectedRoute>
                                     <div className="p-6 pb-28">
-                                        <h1 className="text-2xl font-bold text-white mb-6">Calendario de Entrenamiento</h1>
+                                        <h1 className="text-2xl font-black text-slate-900 mb-6 uppercase tracking-tight">Calendario de Entrenamiento</h1>
                                         <TrainingCalendar />
                                     </div>
                                     <BottomNav />
