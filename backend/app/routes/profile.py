@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from ..models import User, ShopItem, UserAchievement, Achievement, UserItem, db
+from ..models import User, ShopItem, UserAchievement, Achievement, UserItem, BodyMetric, db
+from datetime import datetime
 
 profile_bp = Blueprint('profile', __name__)
 
@@ -33,6 +34,7 @@ def get_profile():
             'xp_progress': round(xp_progress, 2),
             'xp_for_next_level': xp_needed,
             'avatar_icon': user.avatar_icon,
+            'avatar_url': user.avatar_url,
             'username_color': user.username_color,
             'is_verified': user.is_verified,
             'title': user.title,
@@ -157,13 +159,55 @@ def purchase_item(item_id):
     
     db.session.commit()
     
+    # Mensaje personalizado si ya lo tenía o es gratis
+    is_update = item.price == 0 or (item.item_type != 'consumable' and UserItem.query.filter_by(user_id=user.id, item_id=item.id).count() > 0)
+    msg = f"¡Has equipado {item.name}!" if is_update else f"¡Has comprado {item.name}!"
+
     return jsonify({
-        "msg": f"¡Has comprado {item.name}!",
+        "msg": msg,
         "remaining_coins": user.coins,
         "item_applied": True,
+        "is_update": is_update,
         "current_streak_shields": user.streak_shields,
         "xp_booster_sessions": user.xp_booster_sessions
     }), 200
+
+@profile_bp.route('/upload-avatar', methods=['POST'])
+@jwt_required()
+def upload_avatar():
+    """Subir una foto personalizada para el avatar"""
+    try:
+        from werkzeug.utils import secure_filename
+        import os
+        from flask import current_app
+        
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        
+        if 'file' not in request.files:
+            return jsonify({"msg": "No se ha seleccionado ningún archivo"}), 400
+            
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"msg": "Archivo vacío"}), 400
+            
+        if file:
+            filename = secure_filename(f"avatar_user_{user_id}_{file.filename}")
+            upload_path = os.path.join(current_app.root_path, 'static/uploads', filename)
+            file.save(upload_path)
+            
+            # Guardar la URL relativa
+            user.avatar_url = f"/static/uploads/{filename}"
+            db.session.commit()
+            
+            return jsonify({
+                "msg": "Avatar actualizado correctamente",
+                "avatar_url": user.avatar_url
+            }), 200
+            
+    except Exception as e:
+        print(f"ERROR en upload_avatar: {str(e)}")
+        return jsonify({"msg": "Error al subir avatar", "error": str(e)}), 500
 
 @profile_bp.route('/achievements', methods=['GET'])
 @jwt_required()
@@ -223,5 +267,55 @@ def get_level_rewards():
         
         return jsonify(rewards_table), 200
     except Exception as e:
-        print(f"ERROR en get_level_rewards: {str(e)}")
         return jsonify({"msg": "Error al obtener recompensas", "error": str(e)}), 500
+
+@profile_bp.route('/body-metrics', methods=['GET'])
+@jwt_required()
+def get_body_metrics():
+    try:
+        user_id = get_jwt_identity()
+        metrics = BodyMetric.query.filter_by(user_id=user_id).order_by(BodyMetric.date.asc()).all()
+        return jsonify([{
+            'id': m.id,
+            'date': m.date.isoformat(),
+            'weight': m.weight,
+            'body_fat': m.body_fat,
+            'arm_cm': m.arm_cm,
+            'waist_cm': m.waist_cm,
+            'chest_cm': m.chest_cm,
+            'leg_cm': m.leg_cm
+        } for m in metrics]), 200
+    except Exception as e:
+        return jsonify({"msg": "Error al obtener métricas", "error": str(e)}), 500
+
+@profile_bp.route('/body-metrics', methods=['POST'])
+@jwt_required()
+def add_body_metric():
+    try:
+        user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        date_str = data.get('date')
+        if date_str:
+            metric_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        else:
+            metric_date = datetime.today().date()
+            
+        metric = BodyMetric.query.filter_by(user_id=user_id, date=metric_date).first()
+        
+        if not metric:
+            metric = BodyMetric(user_id=user_id, date=metric_date)
+            db.session.add(metric)
+            
+        if 'weight' in data and data['weight'] != '': metric.weight = float(data['weight'])
+        if 'body_fat' in data and data['body_fat'] != '': metric.body_fat = float(data['body_fat'])
+        if 'arm_cm' in data and data['arm_cm'] != '': metric.arm_cm = float(data['arm_cm'])
+        if 'waist_cm' in data and data['waist_cm'] != '': metric.waist_cm = float(data['waist_cm'])
+        if 'chest_cm' in data and data['chest_cm'] != '': metric.chest_cm = float(data['chest_cm'])
+        if 'leg_cm' in data and data['leg_cm'] != '': metric.leg_cm = float(data['leg_cm'])
+        
+        db.session.commit()
+        return jsonify({"msg": "Métrica guardada correctamente"}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Error al guardar métrica", "error": str(e)}), 500

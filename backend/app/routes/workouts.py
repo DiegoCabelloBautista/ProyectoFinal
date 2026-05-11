@@ -9,7 +9,16 @@ workouts_bp = Blueprint('workouts', __name__)
 @jwt_required()
 def get_sessions():
     user_id = get_jwt_identity()
-    sessions = WorkoutSession.query.filter_by(user_id=user_id).order_by(WorkoutSession.start_time.desc()).all()
+    days = request.args.get('days', type=int)
+    
+    query = WorkoutSession.query.filter_by(user_id=user_id)
+    
+    if days:
+        from datetime import timedelta
+        cutoff_date = datetime.utcnow() - timedelta(days=days)
+        query = query.filter(WorkoutSession.start_time >= cutoff_date)
+        
+    sessions = query.order_by(WorkoutSession.start_time.desc()).all()
     return jsonify([{
         "id": s.id,
         "routine_id": s.routine_id,
@@ -63,6 +72,10 @@ def finish_session(id):
     
     db.session.commit()
     
+    # Comprobar logros después de actualizar racha y XP
+    from ..utils.gamification import check_user_achievements
+    new_achievements = check_user_achievements(user_id)
+    
     response = {
         "msg": "Sesión finalizada",
         "xp_gained_base": xp_gained,
@@ -70,11 +83,12 @@ def finish_session(id):
         "xp_boosted": level_up_info['applied_xp'] > xp_gained,
         "total_xp": user.xp,
         "level": user.level,
+        "coins": user.coins,
         "current_streak": streak_info['current_streak'],
         "longest_streak": streak_info['longest_streak'],
         "shield_used": streak_info.get('shield_used', False),
-        # True solo cuando se bate el récord personal de racha
         "streak_milestone": streak_info['streak_updated'] and streak_info['longest_streak'] > prev_longest,
+        "new_achievements": new_achievements
     }
     
     if level_up_info['level_up']:

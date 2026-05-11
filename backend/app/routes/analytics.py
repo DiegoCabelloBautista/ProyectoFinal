@@ -304,3 +304,94 @@ def export_csv():
         mimetype="text/csv",
         headers={"Content-disposition": "attachment; filename=historial_entrenamiento.csv"}
     )
+
+@analytics_bp.route('/export-pdf', methods=['GET'])
+@jwt_required()
+def export_pdf():
+    """Genera y descarga un archivo PDF con el historial de entrenamiento."""
+    from fpdf import FPDF
+    from flask import Response, make_response
+    from ..models import User
+    
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    
+    # Obtener logs
+    logs = db.session.query(
+        WorkoutSession.start_time,
+        Exercise.name,
+        WorkoutLog.set_number,
+        WorkoutLog.weight,
+        WorkoutLog.reps,
+        WorkoutLog.rpe
+    ).join(
+        WorkoutLog, WorkoutSession.id == WorkoutLog.session_id
+    ).join(
+        Exercise, Exercise.id == WorkoutLog.exercise_id
+    ).filter(
+        WorkoutSession.user_id == user_id
+    ).order_by(
+        WorkoutSession.start_time.desc(), WorkoutLog.set_number
+    ).all()
+    
+    class PDF(FPDF):
+        def header(self):
+            # Logo/Título
+            self.set_font('Arial', 'B', 20)
+            self.set_text_color(43, 238, 108) # Color primario #2bee6c
+            self.cell(0, 10, 'GymTrack Pro', 0, 1, 'C')
+            self.set_font('Arial', 'I', 10)
+            self.set_text_color(100, 100, 100)
+            self.cell(0, 10, 'Tu Progresión de Fuerza Documentada', 0, 1, 'C')
+            self.ln(10)
+            
+        def footer(self):
+            self.set_y(-15)
+            self.set_font('Arial', 'I', 8)
+            self.cell(0, 10, f'Página {self.page_no()}', 0, 0, 'C')
+
+    pdf = PDF()
+    pdf.add_page()
+    
+    # Info de Usuario
+    pdf.set_font('Arial', 'B', 12)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 10, f'Informe de Entrenamiento: {user.username}', 0, 1, 'L')
+    pdf.set_font('Arial', '', 10)
+    pdf.cell(0, 10, f'Fecha de generación: {datetime.now().strftime("%d/%m/%Y %H:%M")}', 0, 1, 'L')
+    pdf.ln(5)
+    
+    # Tabla Header
+    pdf.set_fill_color(43, 238, 108)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font('Arial', 'B', 10)
+    
+    col_widths = [35, 75, 20, 25, 25]
+    headers = ['Fecha', 'Ejercicio', 'Serie', 'Peso (kg)', 'Reps']
+    
+    for i in range(len(headers)):
+        pdf.cell(col_widths[i], 10, headers[i], 1, 0, 'C', 1)
+    pdf.ln()
+    
+    # Datos Tabla
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font('Arial', '', 9)
+    fill = False
+    
+    for log in logs:
+        # Alternar color de fondo
+        pdf.set_fill_color(245, 245, 245) if fill else pdf.set_fill_color(255, 255, 255)
+        
+        pdf.cell(col_widths[0], 8, log.start_time.strftime('%d/%m/%y') if log.start_time else 'N/A', 1, 0, 'C', 1)
+        pdf.cell(col_widths[1], 8, log.name[:40], 1, 0, 'L', 1)
+        pdf.cell(col_widths[2], 8, str(log.set_number), 1, 0, 'C', 1)
+        pdf.cell(col_widths[3], 8, f'{log.weight}kg', 1, 0, 'C', 1)
+        pdf.cell(col_widths[4], 8, str(log.reps), 1, 0, 'C', 1)
+        pdf.ln()
+        fill = not fill
+        
+    return Response(
+        bytes(pdf.output()),
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=GymTrackPro_Report_{user.username}.pdf"}
+    )

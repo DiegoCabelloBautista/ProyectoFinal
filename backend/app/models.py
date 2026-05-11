@@ -29,14 +29,20 @@ class User(db.Model):
     
     # Personalización Premium
     avatar_icon = db.Column(db.String(50), default='person')
+    avatar_url = db.Column(db.String(255), default=None)
     username_color = db.Column(db.String(20), default='#00C9FF')
     is_verified = db.Column(db.Boolean, default=False)
     title = db.Column(db.String(50), default=None)
+    role = db.Column(db.String(20), default='user') # 'admin', 'trainer', 'user'
     
     # Consumibles y Colecciones
     streak_shields = db.Column(db.Integer, default=0)
     xp_booster_multiplier = db.Column(db.Float, default=1.0)
     xp_booster_sessions = db.Column(db.Integer, default=0)
+
+    # Mensajes de Entrenador
+    trainer_note = db.Column(db.String(255), default=None)
+    trainer_note_date = db.Column(db.DateTime, default=None)
 
     routines = db.relationship('Routine', backref='author', lazy='dynamic')
     sessions = db.relationship('WorkoutSession', backref='user', lazy='dynamic')
@@ -152,10 +158,25 @@ class Routine(db.Model):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    is_public = db.Column(db.Boolean, default=False)  # Publicada en comunidad
+    is_public = db.Column(db.Boolean, default=False)
+    music_url = db.Column(db.String(500), default=None) # URL de Spotify o YouTube
 
     exercises = db.relationship('RoutineExercise', backref='routine', cascade='all, delete-orphan')
     likes = db.relationship('RoutineLike', backref='routine', cascade='all, delete-orphan')
+    reviews = db.relationship('RoutineReview', backref='routine', cascade='all, delete-orphan')
+    saved_by = db.relationship('SavedRoutine', backref='original_routine', cascade='all, delete-orphan', foreign_keys='SavedRoutine.original_routine_id')
+    sessions = db.relationship('WorkoutSession', backref='routine', foreign_keys='WorkoutSession.routine_id')
+
+class RoutineReview(db.Model):
+    __tablename__ = 'routine_reviews'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    routine_id = db.Column(db.Integer, db.ForeignKey('routines.id'), nullable=False)
+    rating = db.Column(db.Integer, nullable=False) # 1 a 5
+    comment = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref=db.backref('routine_reviews', lazy='dynamic'))
 
 class RoutineExercise(db.Model):
     __tablename__ = 'routine_exercises'
@@ -170,7 +191,7 @@ class WorkoutSession(db.Model):
     __tablename__ = 'workout_sessions'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    routine_id = db.Column(db.Integer, db.ForeignKey('routines.id'))
+    routine_id = db.Column(db.Integer, db.ForeignKey('routines.id', ondelete='SET NULL'), nullable=True)
     start_time = db.Column(db.DateTime, default=datetime.utcnow)
     end_time = db.Column(db.DateTime)
     

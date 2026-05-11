@@ -11,15 +11,18 @@ import RoutineBuilder from './components/routines/RoutineBuilder';
 import WorkoutLogger from './components/routines/WorkoutLogger';
 import CommunityPage from './components/community/CommunityPage';
 import PublicProfile from './components/profile/PublicProfile';
+import TermsOfUse from './components/legal/TermsOfUse';
+import AdminDashboard from './components/admin/AdminDashboard';
+import CoachDashboard from './components/admin/CoachDashboard';
+import TrainingCalendar from './components/calendar/TrainingCalendar';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     const { user, loading } = useAuth();
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center" style={{ background: '#0A0D14' }}>
-                <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
-                    style={{ borderColor: 'rgba(139,92,246,0.3)', borderTopColor: '#8B5CF6' }} />
+            <div className="min-h-screen flex items-center justify-center bg-white">
+                <div className="w-10 h-10 rounded-full border-4 border-slate-100 border-t-primary animate-spin" />
             </div>
         );
     }
@@ -32,19 +35,24 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const BottomNav = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { user } = useAuth();
     const isActive = (path: string) => location.pathname === path;
 
     const navItems = [
         { icon: 'space_dashboard', label: 'Inicio', path: '/' },
         { icon: 'calendar_today', label: 'Rutinas', path: '/routines' },
-        { icon: 'groups', label: 'Comunidad', path: '/community' },
+        { icon: 'groups', label: 'Social', path: '/community' },
         { icon: 'leaderboard', label: 'Análisis', path: '/analytics' },
         { icon: 'person', label: 'Perfil', path: '/profile' },
     ];
 
+    if (user?.role === 'trainer' || user?.role === 'admin') {
+        navItems.splice(4, 0, { icon: 'sports', label: 'Coach', path: '/coach' });
+    }
+
     return (
-        <nav className="glass-nav fixed bottom-0 left-0 right-0 z-50">
-            <div className="flex items-center justify-around px-4 py-3">
+        <nav className="glass-nav fixed bottom-0 left-0 right-0 z-50 pb-safe">
+            <div className="flex items-center justify-between px-4 py-2">
                 {navItems.map((item) => (
                     <NavBtn key={item.path} {...item} active={isActive(item.path)} onClick={() => navigate(item.path)} />
                 ))}
@@ -63,18 +71,20 @@ interface NavBtnProps {
 const NavBtn: React.FC<NavBtnProps> = ({ icon, label, active, onClick }) => (
     <button
         onClick={onClick}
-        className="flex flex-col items-center gap-1 min-w-[52px] transition-all"
-        style={{ color: active ? '#A78BFA' : 'rgba(100,116,139,0.8)' }}
+        className="flex-1 flex flex-col items-center gap-1 transition-all relative group min-w-0"
     >
         <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
-            style={{
-                background: active ? 'rgba(139,92,246,0.15)' : 'transparent',
-            }}
+            className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
+                active 
+                    ? 'bg-emerald-50 text-primary shadow-sm' 
+                    : 'bg-transparent text-slate-400'
+            }`}
         >
-            <span className="material-icons-round text-xl">{icon}</span>
+            <span className={`material-icons-round ${active ? 'text-2xl' : 'text-xl'}`}>{icon}</span>
         </div>
-        <span className="text-[10px] font-semibold">{label}</span>
+        <span className={`text-[7px] font-black uppercase tracking-tight truncate w-full px-0.5 ${active ? 'text-primary' : 'text-slate-400'}`}>
+            {label}
+        </span>
     </button>
 );
 
@@ -82,10 +92,11 @@ function App() {
     return (
         <Router>
             <AuthProvider>
-                <div style={{ background: '#0A0D14', minHeight: '100vh' }}>
+                <div className="bg-white min-h-screen font-sans selection:bg-emerald-500/30 selection:text-emerald-900">
                     <Routes>
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
+                        <Route path="/terms" element={<TermsOfUse />} />
                         <Route
                             path="/"
                             element={
@@ -154,6 +165,36 @@ function App() {
                             element={
                                 <ProtectedRoute>
                                     <WorkoutLogger />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/calendar"
+                            element={
+                                <ProtectedRoute>
+                                    <div className="p-6 pb-28">
+                                        <h1 className="text-2xl font-bold text-white mb-6">Calendario de Entrenamiento</h1>
+                                        <TrainingCalendar />
+                                    </div>
+                                    <BottomNav />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin"
+                            element={
+                                <ProtectedRoute>
+                                    <AdminDashboard />
+                                    <BottomNav />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/coach"
+                            element={
+                                <ProtectedRoute>
+                                    <CoachDashboard />
+                                    <BottomNav />
                                 </ProtectedRoute>
                             }
                         />

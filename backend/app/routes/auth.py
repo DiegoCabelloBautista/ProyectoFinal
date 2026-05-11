@@ -47,7 +47,14 @@ def login():
         user = User.query.filter_by(username=data['username']).first()
         if user and user.check_password(data['password']):
             access_token = create_access_token(identity=str(user.id))
-            return jsonify(access_token=access_token, user={"id": user.id, "username": user.username}), 200
+            return jsonify(access_token=access_token, user={
+                "id": user.id, 
+                "username": user.username, 
+                "role": user.role,
+                "avatar_url": user.avatar_url,
+                "trainer_note": user.trainer_note,
+                "trainer_note_date": user.trainer_note_date.isoformat() if user.trainer_note_date else None
+            }), 200
         return jsonify({"msg": "Usuario o contraseña incorrectos"}), 401
     except Exception as e:
         print(f"ERROR en login: {str(e)}")
@@ -76,12 +83,16 @@ def me():
             "coins": user.coins if user.coins is not None else 0,
             "xp_progress": round(user.xp_progress_percentage(), 2),
             "avatar_icon": user.avatar_icon,
+            "avatar_url": user.avatar_url,
             "username_color": user.username_color,
             "is_verified": user.is_verified,
             "title": user.title,
+            "role": user.role,
             "current_streak": user.current_streak or 0,
             "longest_streak": user.longest_streak or 0,
             "last_workout_date": user.last_workout_date.isoformat() if user.last_workout_date else None,
+            "trainer_note": user.trainer_note,
+            "trainer_note_date": user.trainer_note_date.isoformat() if user.trainer_note_date else None,
         }), 200
     except Exception as e:
         print(f"ERROR en me: {str(e)}")

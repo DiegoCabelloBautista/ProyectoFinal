@@ -11,3 +11,5 @@ cryptography
 python-dotenv
 pytest
 google-generativeai
+fpdf2
+gunicorn

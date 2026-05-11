@@ -56,8 +56,8 @@ const StreakCard: React.FC<StreakCardProps> = ({ currentStreak, longestStreak, l
             <div className="relative">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-sm font-bold text-white flex items-center gap-1.5">
-                        <span className="material-icons-round text-orange-400 text-base">local_fire_department</span>
+                    <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                        <span className="material-icons-round text-orange-500 text-base">local_fire_department</span>
                         Racha de Entrenamiento
                     </h2>
                     {/* Badge "Entrenado hoy" */}
@@ -65,37 +65,37 @@ const StreakCard: React.FC<StreakCardProps> = ({ currentStreak, longestStreak, l
                         className="text-xs font-semibold px-2 py-0.5 rounded-full"
                         style={
                             trainedToday
-                                ? { background: 'rgba(34,197,94,0.15)', color: '#4ADE80' }
-                                : { background: 'rgba(100,116,139,0.15)', color: '#94A3B8' }
+                                ? { background: 'rgba(16,185,129,0.1)', color: '#059669' }
+                                : { background: 'rgba(100,116,139,0.1)', color: '#64748B' }
                         }
                     >
-                        {trainedToday ? '✓ Hoy completado' : 'Pendiente hoy'}
+                        {trainedToday ? '✓ Completado' : 'Pendiente hoy'}
                     </span>
                 </div>
 
                 {/* Números principales */}
                 <div className="flex items-end gap-5 mb-4">
                     <div>
-                        <p className="text-5xl font-black leading-none" style={{ color: currentStreak >= 3 ? '#FB923C' : '#94A3B8' }}>
+                        <p className="text-5xl font-black leading-none" style={{ color: currentStreak >= 3 ? '#F97316' : '#64748B' }}>
                             {currentStreak}
                             <span className="text-2xl ml-1">{flameEmoji(currentStreak)}</span>
                         </p>
-                        <p className="text-xs text-slate-500 mt-1 font-medium">días consecutivos</p>
+                        <p className="text-xs text-slate-500 mt-1 font-medium">días seguidos</p>
                     </div>
                     <div className="mb-1">
-                        <p className="text-xl font-bold text-slate-300">{longestStreak}</p>
-                        <p className="text-xs text-slate-600 font-medium">mejor racha</p>
+                        <p className="text-xl font-bold text-slate-700">{longestStreak}</p>
+                        <p className="text-xs text-slate-400 font-medium">mejor racha</p>
                     </div>
                 </div>
 
                 {/* Barra de progreso hacia el récord */}
                 {longestStreak > 0 && (
                     <div className="mb-3">
-                        <div className="flex justify-between text-xs text-slate-600 mb-1.5">
-                            <span>Progreso hacia tu récord ({longestStreak} días)</span>
-                            <span className="font-semibold" style={{ color: '#FB923C' }}>{Math.round(progress)}%</span>
+                        <div className="flex justify-between text-xs text-slate-500 mb-1.5">
+                            <span>Hacia tu récord ({longestStreak} días)</span>
+                            <span className="font-semibold" style={{ color: '#F97316' }}>{Math.round(progress)}%</span>
                         </div>
-                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#F1F5F9' }}>
                             <motion.div
                                 initial={{ width: 0 }}
                                 animate={{ width: `${progress}%` }}
@@ -103,8 +103,8 @@ const StreakCard: React.FC<StreakCardProps> = ({ currentStreak, longestStreak, l
                                 className="h-full rounded-full"
                                 style={{
                                     background: currentStreak >= longestStreak
-                                        ? 'linear-gradient(90deg, #FB923C, #FBBF24)'
-                                        : 'linear-gradient(90deg, #FB923C80, #FB923C)',
+                                        ? 'linear-gradient(90deg, #F97316, #FBBF24)'
+                                        : 'linear-gradient(90deg, #F9731680, #F97316)',
                                 }}
                             />
                         </div>

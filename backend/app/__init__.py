@@ -10,17 +10,24 @@ migrate = Migrate()
 jwt = JWTManager()
 
 def create_app(config_class=Config):
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder='static', static_url_path='/static')
     app.config.from_object(config_class)
 
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
     
-    # Configuración CORS con headers específicos
+    # Asegurar que existe la carpeta de uploads
+    import os
+    upload_path = os.path.join(app.root_path, 'static/uploads')
+    if not os.path.exists(upload_path):
+        os.makedirs(upload_path, exist_ok=True)
+    
+    # Configuración CORS
+    allowed_origins = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000').split(',')
     CORS(app, resources={
         r"/api/*": {
-            "origins": ["http://localhost:5173", "http://localhost:8080", "http://localhost:8081", "http://localhost:3000", "http://127.0.0.1:8081"],
+            "origins": allowed_origins,
             "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"],
             "supports_credentials": True
@@ -34,6 +41,7 @@ def create_app(config_class=Config):
     from .routes.analytics import analytics_bp
     from .routes.profile import profile_bp
     from .routes.community import community_bp
+    from .routes.admin import admin_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(exercises_bp, url_prefix='/api/exercises')
@@ -42,6 +50,7 @@ def create_app(config_class=Config):
     app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
     app.register_blueprint(profile_bp, url_prefix='/api/profile')
     app.register_blueprint(community_bp, url_prefix='/api/community')
+    app.register_blueprint(admin_bp, url_prefix='/api/admin')
 
     @app.errorhandler(Exception)
     def handle_exception(e):

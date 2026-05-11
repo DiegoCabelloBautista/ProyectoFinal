@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+export const BASE_URL = API_BASE_URL.replace('/api', '');
+
 const api = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: API_BASE_URL,
 });
 
 // Add interceptor for JWT
@@ -34,9 +37,10 @@ export const routinesApi = {
     getAll: () => api.get('/routines'),
     getById: (id: number) => api.get(`/routines/${id}`),
     create: (data: any) => api.post('/routines', data),
-    generate: (prompt: string) => api.post('/routines/generate', { prompt }),
+    generate: (prompt: string, num_exercises: number = 6) => api.post('/routines/generate', { prompt, num_exercises }),
     delete: (id: number) => api.delete(`/routines/${id}`),
     togglePublish: (id: number) => api.patch(`/routines/${id}/publish`),
+    updateMusic: (id: number, music_url: string) => api.patch(`/routines/${id}/music`, { music_url }),
 };
 
 export const exercisesApi = {
@@ -44,7 +48,7 @@ export const exercisesApi = {
 };
 
 export const workoutsApi = {
-    getSessions: () => api.get('/workouts/sessions'),
+    getSessions: (days?: number) => api.get('/workouts/sessions', { params: { days } }),
     getSessionDetail: (id: number) => api.get(`/workouts/sessions/${id}`),
     startSession: (routineId: number) => api.post('/workouts/sessions', { routine_id: routineId }),
     finishSession: (sessionId: number) => api.post(`/workouts/sessions/${sessionId}/finish`),
@@ -60,6 +64,7 @@ export const analyticsApi = {
     getStatsSummary: () => api.get('/analytics/stats-summary'),
     getWeeklyVolume: (weeks: number = 12) => api.get('/analytics/weekly-volume', { params: { weeks } }),
     exportCsv: () => api.get('/analytics/export-csv', { responseType: 'blob' }),
+    exportPdf: () => api.get('/analytics/export-pdf', { responseType: 'blob' }),
 };
 
 export const profileApi = {
@@ -69,6 +74,11 @@ export const profileApi = {
     purchaseItem: (itemId: number) => api.post(`/profile/shop/purchase/${itemId}`),
     getAchievements: () => api.get('/profile/achievements'),
     getLevelRewards: () => api.get('/profile/level-rewards'),
+    getBodyMetrics: () => api.get('/profile/body-metrics'),
+    addBodyMetric: (data: any) => api.post('/profile/body-metrics', data),
+    uploadAvatar: (formData: FormData) => api.post('/profile/upload-avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
 };
 
 export const communityApi = {
@@ -79,6 +89,23 @@ export const communityApi = {
     getLeaderboard: () => api.get('/community/leaderboard'),
     toggleFollow: (userId: number) => api.post(`/community/users/${userId}/follow`),
     getUserProfile: (userId: number) => api.get(`/community/users/${userId}`),
+    getReviews: (routineId: number) => api.get(`/community/routines/${routineId}/reviews`),
+    submitReview: (routineId: number, data: { rating: number; comment: string }) =>
+        api.post(`/community/routines/${routineId}/reviews`, data),
+    getFriends: () => api.get('/community/friends'),
+    searchUsers: (q: string) => api.get('/community/search-users', { params: { q } }),
+};
+
+export const adminApi = {
+    getUsers: () => api.get('/admin/users'),
+    updateUserRole: (userId: number, role: string) => api.put(`/admin/users/${userId}/role`, { role }),
+    deleteUser: (userId: number) => api.delete(`/admin/users/${userId}`),
+    getCoachClients: () => api.get('/admin/coach-clients'),
+    getClientStats: (clientId: number) => api.get(`/admin/coach/client/${clientId}/stats`),
+    nudgeUser: (clientId: number, note: string) => api.post(`/admin/coach/client/${clientId}/nudge`, { note }),
+    rewardUser: (clientId: number, amount: number) => api.post(`/admin/coach/client/${clientId}/reward`, { amount }),
+    assignRoutine: (clientId: number, routineId: number) => api.post(`/admin/coach/client/${clientId}/assign-routine`, { routineId }),
+    clearNudge: () => api.post('/admin/coach/clear-nudge'),
 };
 
 export default api;

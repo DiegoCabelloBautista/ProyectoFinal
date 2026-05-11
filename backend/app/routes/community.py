@@ -2,8 +2,9 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..models import (
     db, Routine, RoutineExercise, Exercise,
-    RoutineLike, SavedRoutine, User, followers
+    RoutineLike, SavedRoutine, User, followers, RoutineReview
 )
+from sqlalchemy import func
 
 community_bp = Blueprint('community', __name__)
 
@@ -20,6 +21,16 @@ def _serialize_routine(routine: Routine, current_user: User) -> dict:
     exercise_count = RoutineExercise.query.filter_by(routine_id=routine.id).count()
     author = User.query.get(routine.user_id)
     
+    # Datos de valoración
+    review_agg = db.session.query(
+        func.avg(RoutineReview.rating).label('avg_rating'),
+        func.count(RoutineReview.id).label('review_count')
+    ).filter(RoutineReview.routine_id == routine.id).one()
+    avg_rating = round(float(review_agg.avg_rating), 1) if review_agg.avg_rating else 0.0
+    review_count = review_agg.review_count or 0
+    
+    user_review = RoutineReview.query.filter_by(user_id=current_user.id, routine_id=routine.id).first()
+    
     is_followed = False
     if author and author.id != current_user.id:
         is_followed = current_user.followed.filter(followers.c.followed_id == author.id).count() > 0
@@ -34,11 +45,15 @@ def _serialize_routine(routine: Routine, current_user: User) -> dict:
         'user_liked': user_liked,
         'user_saved': user_saved,
         'is_own': routine.user_id == current_user.id,
+        'avg_rating': avg_rating,
+        'review_count': review_count,
+        'user_rating': user_review.rating if user_review else 0,
         'author': {
             'id': author.id,
             'username': author.username,
             'level': author.level,
             'avatar_icon': author.avatar_icon,
+            'avatar_url': author.avatar_url,
             'username_color': author.username_color,
             'is_followed': is_followed
         } if author else None,
@@ -80,6 +95,13 @@ def toggle_like(routine_id: int):
         liked = True
 
     db.session.commit()
+    
+    # Comprobar logros (Likes recibidos y dados)
+    from ..utils.gamification import check_user_achievements
+    check_user_achievements(current_user_id) # El que da el like
+    if liked:
+        check_user_achievements(routine.user_id) # El que recibe el like
+        
     like_count = RoutineLike.query.filter_by(routine_id=routine_id).count()
     return jsonify({'liked': liked, 'likes': like_count}), 200
 
@@ -133,6 +155,11 @@ def save_routine(routine_id: int):
         original_routine_id=routine_id,
     ))
     db.session.commit()
+    
+    # Comprobar logros (Guardados/Saves)
+    from ..utils.gamification import check_user_achievements
+    check_user_achievements(current_user_id)
+    
     return jsonify({'saved': True, 'msg': 'Rutina guardada en tu colección', 'new_routine_id': clone.id}), 201
 
 
@@ -173,6 +200,7 @@ def get_leaderboard():
             'level': u.level,
             'xp': u.xp,
             'avatar_icon': u.avatar_icon,
+            'avatar_url': u.avatar_url,
             'username_color': u.username_color,
             'title': u.title,
             'is_current_user': u.id == current_user_id
@@ -204,6 +232,11 @@ def toggle_follow(user_id):
         following_now = True
         
     db.session.commit()
+    
+    # Comprobar logros (Follows)
+    from ..utils.gamification import check_user_achievements
+    check_user_achievements(current_user_id)
+    
     return jsonify({
         'following': following_now,
         'followers_count': target_user.followers.count()
@@ -228,6 +261,7 @@ def get_public_profile(user_id):
         'level': target_user.level,
         'xp': target_user.xp,
         'avatar_icon': target_user.avatar_icon,
+        'avatar_url': target_user.avatar_url,
         'username_color': target_user.username_color,
         'title': target_user.title,
         'followers_count': target_user.followers.count(),
@@ -236,3 +270,127 @@ def get_public_profile(user_id):
         'is_own_profile': current_user_id == user_id,
         'routines': [_serialize_routine(r, current_user) for r in routines]
     }), 200
+
+
+# ── Reseñas y Valoraciones ────────────────────────────────────────────────────
+
+@community_bp.route('/routines/<int:routine_id>/reviews', methods=['GET'])
+@jwt_required()
+def get_reviews(routine_id: int):
+    """Lista de reseñas de una rutina pública."""
+    reviews = RoutineReview.query.filter_by(routine_id=routine_id).order_by(RoutineReview.created_at.desc()).all()
+    return jsonify([{
+        'id': r.id,
+        'rating': r.rating,
+        'comment': r.comment,
+        'created_at': r.created_at.isoformat(),
+        'user': {
+            'id': r.user.id,
+            'username': r.user.username,
+            'avatar_icon': r.user.avatar_icon,
+            'avatar_url': r.user.avatar_url,
+            'username_color': r.user.username_color,
+        }
+    } for r in reviews]), 200
+
+
+@community_bp.route('/routines/<int:routine_id>/reviews', methods=['POST'])
+@jwt_required()
+def submit_review(routine_id: int):
+    """Crea o actualiza la reseña del usuario sobre una rutina."""
+    current_user_id = get_jwt_identity()
+    data = request.get_json()
+    
+    rating = data.get('rating')
+    if not rating or not (1 <= int(rating) <= 5):
+        return jsonify({'msg': 'La valoración debe ser entre 1 y 5'}), 400
+    
+    routine = Routine.query.filter_by(id=routine_id, is_public=True).first_or_404()
+    if routine.user_id == int(current_user_id):
+        return jsonify({'msg': 'No puedes valorar tu propia rutina'}), 400
+    
+    existing = RoutineReview.query.filter_by(user_id=current_user_id, routine_id=routine_id).first()
+    if existing:
+        existing.rating = int(rating)
+        existing.comment = data.get('comment', existing.comment)
+    else:
+        review = RoutineReview(
+            user_id=current_user_id,
+            routine_id=routine_id,
+            rating=int(rating),
+            comment=data.get('comment', '')
+        )
+        db.session.add(review)
+    
+    db.session.commit()
+    
+    # Comprobar logros (Reseñas/Reviews)
+    from ..utils.gamification import check_user_achievements
+    check_user_achievements(current_user_id)
+    
+    # Recalcular agregados para devolverlos al frontend
+    review_agg = db.session.query(
+        func.avg(RoutineReview.rating).label('avg_rating'),
+        func.count(RoutineReview.id).label('review_count')
+    ).filter(RoutineReview.routine_id == routine_id).one()
+    
+    return jsonify({
+        'msg': 'Valoración guardada correctamente',
+        'avg_rating': round(float(review_agg.avg_rating), 1) if review_agg.avg_rating else 0.0,
+        'review_count': review_agg.review_count or 0
+    }), 201
+
+
+# ── Amistades ──────────────────────────────────────────────────────────────────
+
+@community_bp.route('/friends', methods=['GET'])
+@jwt_required()
+def get_friends():
+    """Lista de usuarios que el usuario sigue y que le siguen (amigos mutuos)."""
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    
+    following_ids = {u.id for u in current_user.followed.all()}
+    follower_ids = {u.id for u in current_user.followers.all()}
+    
+    mutual_ids = following_ids & follower_ids
+    
+    friends = User.query.filter(User.id.in_(mutual_ids)).all() if mutual_ids else []
+    
+    return jsonify([{
+        'id': u.id,
+        'username': u.username,
+        'level': u.level,
+        'avatar_icon': u.avatar_icon,
+        'username_color': u.username_color,
+        'title': u.title,
+    } for u in friends]), 200
+
+
+@community_bp.route('/search-users', methods=['GET'])
+@jwt_required()
+def search_users():
+    """Busca usuarios por nombre de usuario."""
+    query = request.args.get('q', '').strip()
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    
+    if not query or len(query) < 2:
+        return jsonify([]), 200
+    
+    users = User.query.filter(
+        User.username.ilike(f'%{query}%'),
+        User.id != current_user_id
+    ).limit(10).all()
+    
+    following_ids = {u.id for u in current_user.followed.all()}
+    
+    return jsonify([{
+        'id': u.id,
+        'username': u.username,
+        'level': u.level,
+        'avatar_icon': u.avatar_icon,
+        'username_color': u.username_color,
+        'title': u.title,
+        'is_following': u.id in following_ids
+    } for u in users]), 200

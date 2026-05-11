@@ -41,24 +41,24 @@ const ProgressChart: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="bg-white/5 rounded-2xl p-6 border border-white/10 h-64 flex items-center justify-center">
+            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 h-64 flex items-center justify-center">
                 <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
     }
 
     return (
-        <div className="bg-white/5 rounded-2xl p-6 border border-white/10 relative overflow-hidden">
+        <div className="bg-white rounded-2xl p-6 border border-slate-100 relative overflow-hidden shadow-sm">
             <div className="flex items-end justify-between mb-6">
                 <div>
-                    <p className="text-sm text-slate-400">Volumen Total</p>
-                    <h3 className="text-3xl font-bold">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Volumen Semanal</p>
+                    <h3 className="text-3xl font-black text-slate-900">
                         {totalVolume > 1000
                             ? `${(totalVolume / 1000).toFixed(1)}`
                             : totalVolume.toFixed(0)
                         }
-                        <span className="text-sm font-normal text-slate-500 ml-1">
-                            {totalVolume > 1000 ? 'toneladas' : 'kg'}
+                        <span className="text-sm font-medium text-slate-500 ml-1">
+                            {totalVolume > 1000 ? 't' : 'kg'}
                         </span>
                     </h3>
                 </div>
@@ -75,46 +75,51 @@ const ProgressChart: React.FC = () => {
             </div>
 
             {data.length === 0 ? (
-                <div className="h-40 flex items-center justify-center text-slate-500">
-                    <p>No hay datos de volumen aún</p>
+                <div className="h-40 flex items-center justify-center text-slate-400">
+                    <p className="text-sm font-medium">No hay datos de volumen aún</p>
                 </div>
             ) : (
                 <ResponsiveContainer width="100%" height={160}>
                     <LineChart data={data}>
                         <defs>
                             <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-                                <stop offset="0%" stopColor="#00C9FF" />
-                                <stop offset="100%" stopColor="#92FE9D" />
+                                <stop offset="0%" stopColor="#10B981" />
+                                <stop offset="100%" stopColor="#3B82F6" />
                             </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                         <XAxis
                             dataKey="week"
                             stroke="#94a3b8"
-                            fontSize={11}
-                            tick={{ fill: '#94a3b8' }}
+                            fontSize={10}
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#94a3b8', fontWeight: 500 }}
                         />
                         <YAxis
                             stroke="#94a3b8"
-                            fontSize={11}
-                            tick={{ fill: '#94a3b8' }}
+                            fontSize={10}
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#94a3b8', fontWeight: 500 }}
                         />
                         <Tooltip
                             contentStyle={{
-                                backgroundColor: '#1e293b',
-                                border: '1px solid #334155',
+                                backgroundColor: '#FFFFFF',
+                                border: '1px solid #E2E8F0',
                                 borderRadius: '12px',
-                                fontSize: '12px'
+                                fontSize: '12px',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
                             }}
-                            labelStyle={{ color: '#00C9FF' }}
+                            labelStyle={{ color: '#10B981', fontWeight: 700 }}
                         />
                         <Line
                             type="monotone"
                             dataKey="volume"
                             stroke="url(#lineGradient)"
                             strokeWidth={3}
-                            dot={{ fill: '#00C9FF', r: 4 }}
-                            activeDot={{ r: 6 }}
+                            dot={{ fill: '#10B981', r: 4, strokeWidth: 2, stroke: '#fff' }}
+                            activeDot={{ r: 6, strokeWidth: 0 }}
                         />
                     </LineChart>
                 </ResponsiveContainer>

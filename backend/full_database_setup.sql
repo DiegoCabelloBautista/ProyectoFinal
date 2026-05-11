@@ -27,7 +27,8 @@ CREATE TABLE users (
     avatar_icon VARCHAR(50) DEFAULT 'person',
     username_color VARCHAR(20) DEFAULT '#00C9FF',
     is_verified BOOLEAN DEFAULT FALSE,
-    title VARCHAR(50) DEFAULT NULL
+    title VARCHAR(50) DEFAULT NULL,
+    role VARCHAR(20) DEFAULT 'user'
 );
 
 -- Crear tabla exercises
@@ -59,6 +60,18 @@ CREATE TABLE IF NOT EXISTS routine_exercises (
     `order` INT DEFAULT 0,
     FOREIGN KEY (routine_id) REFERENCES routines(id) ON DELETE CASCADE,
     FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
+);
+
+-- Crear tabla routine_reviews
+CREATE TABLE IF NOT EXISTS routine_reviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    routine_id INT NOT NULL,
+    rating INT NOT NULL,
+    comment TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (routine_id) REFERENCES routines(id) ON DELETE CASCADE
 );
 
 -- Crear tabla workout_sessions

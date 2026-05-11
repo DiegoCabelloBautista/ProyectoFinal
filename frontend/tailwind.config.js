@@ -8,28 +8,28 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: "#8B5CF6",
-        "primary-light": "#A78BFA",
-        "primary-dark": "#7C3AED",
-        "accent": "#F472B6",
-        "surface": "#0F1117",
-        "surface-2": "#161B27",
-        "surface-3": "#1E2535",
-        "border-subtle": "rgba(139,92,246,0.15)",
-        "background-dark": "#0A0D14",
+        primary: "#10B981", // Emerald 500
+        "primary-light": "#34D399", // Emerald 400
+        "primary-dark": "#059669", // Emerald 600
+        "accent": "#3B82F6", // Blue 500
+        "surface": "#FFFFFF",
+        "surface-2": "#F8FAFC",
+        "surface-3": "#F1F5F9",
+        "border-subtle": "rgba(16,185,129,0.1)",
+        "background-dark": "#FFFFFF", // Override for legacy dark classes to white
       },
       fontFamily: {
         sans: ["Inter", "sans-serif"],
         display: ["Inter", "sans-serif"],
       },
       boxShadow: {
-        "glow": "0 0 20px rgba(139,92,246,0.35)",
-        "glow-sm": "0 0 10px rgba(139,92,246,0.25)",
-        "glow-pink": "0 0 20px rgba(244,114,182,0.3)",
+        "glow": "0 0 20px rgba(16,185,129,0.15)",
+        "glow-sm": "0 0 10px rgba(16,185,129,0.1)",
+        "glow-blue": "0 0 20px rgba(59,130,246,0.1)",
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "hero-gradient": "linear-gradient(135deg, #0A0D14 0%, #161B27 50%, #1a1035 100%)",
+        "hero-gradient": "linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)",
       },
       animation: {
         "float": "float 6s ease-in-out infinite",

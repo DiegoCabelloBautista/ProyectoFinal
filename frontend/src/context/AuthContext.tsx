@@ -3,7 +3,7 @@ import { authApi } from '../services/api';
 
 interface AuthContextType {
     user: any;
-    login: (token: string, userData: any) => void;
+    login: (token: string, userData: any) => Promise<void>;
     logout: () => void;
     refreshUser: () => Promise<void>;
     loading: boolean;

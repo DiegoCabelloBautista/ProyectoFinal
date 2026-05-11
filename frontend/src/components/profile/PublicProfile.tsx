@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { communityApi } from '../../services/api';
+import { communityApi, BASE_URL } from '../../services/api';
 import { ChevronLeft, Users, UserCheck, Heart } from 'lucide-react';
 
 export default function PublicProfile() {
@@ -57,12 +57,20 @@ export default function PublicProfile() {
             {/* Profile Info */}
             <div className="px-6 py-8 flex flex-col items-center">
                 <div 
-                    className="w-24 h-24 rounded-3xl flex items-center justify-center shadow-2xl mb-4 relative" 
-                    style={{ background: 'rgba(139,92,246,0.15)', border: `2px solid ${profile.username_color || '#00C9FF'}` }}
+                    className="w-24 h-24 rounded-full flex items-center justify-center shadow-2xl mb-4 relative overflow-hidden" 
+                    style={{ background: profile.avatar_url ? 'none' : 'rgba(139,92,246,0.15)', border: `2px solid ${profile.username_color || '#00C9FF'}` }}
                 >
-                    <span className="material-icons-round text-primary text-5xl">
-                        {profile.avatar_icon || 'person'}
-                    </span>
+                    {profile.avatar_url ? (
+                        <img 
+                            src={`${BASE_URL}${profile.avatar_url}?t=${new Date().getTime()}`} 
+                            alt="Avatar" 
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <span className="material-icons-round text-primary text-5xl">
+                            {profile.avatar_icon || 'person'}
+                        </span>
+                    )}
                     <div className="absolute -bottom-3 -right-2 bg-background-dark border border-white/10 px-2 py-0.5 rounded-lg text-xs font-bold text-slate-300">
                         Nv.{profile.level}
                     </div>
