@@ -23,16 +23,8 @@ def create_app(config_class=Config):
     if not os.path.exists(upload_path):
         os.makedirs(upload_path, exist_ok=True)
     
-    # Configuración CORS
-    allowed_origins = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000').split(',')
-    CORS(app, resources={
-        r"/api/*": {
-            "origins": allowed_origins,
-            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization"],
-            "supports_credentials": True
-        }
-    })
+    # Configuración CORS simplificada
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
 
     from .routes.auth import auth_bp
     from .routes.exercises import exercises_bp
