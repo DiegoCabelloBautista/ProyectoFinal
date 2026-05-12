@@ -12,6 +12,9 @@ jwt = JWTManager()
 def create_app(config_class=Config):
     app = Flask(__name__, static_folder='static', static_url_path='/static')
     app.config.from_object(config_class)
+    
+    # Asegurar que JSON no convierta tildes a ASCII
+    app.json.ensure_ascii = False
 
     db.init_app(app)
     
