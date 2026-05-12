@@ -10,10 +10,11 @@ class Config:
     if db_url:
         if db_url.startswith('mysql://'):
             db_url = db_url.replace('mysql://', 'mysql+pymysql://', 1)
-        if '?' in db_url:
-            db_url = db_url.split('?')[0]
+    if db_url and 'charset' not in db_url:
+        separator = '&' if '?' in db_url else '?'
+        db_url = f"{db_url}{separator}charset=utf8mb4"
     
-    SQLALCHEMY_DATABASE_URI = db_url or 'mysql+pymysql://root:8326@localhost/gymtrack_pro'
+    SQLALCHEMY_DATABASE_URI = db_url or 'mysql+pymysql://root:8326@localhost/gymtrack_pro?charset=utf8mb4'
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_pre_ping": True,
         "pool_recycle": 300,
