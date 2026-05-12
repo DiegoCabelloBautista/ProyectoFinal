@@ -13,6 +13,12 @@ def get_profile():
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
         
+        # Sincronizar nivel si hay discrepancia por XP acumulada
+        correct_level = user.calculate_level()
+        if (user.level or 1) != correct_level:
+            user.level = correct_level
+            db.session.commit()
+        
         # Obtener logros desbloqueados
         achievements = db.session.query(Achievement).join(
             UserAchievement, UserAchievement.achievement_id == Achievement.id
