@@ -8,25 +8,57 @@ admin_bp = Blueprint('admin', __name__)
 @admin_bp.route('/fix-tildes', methods=['GET'])
 def fix_tildes_admin():
     try:
-        from ..models import Exercise, Routine, db
+        from ..models import Exercise, Routine, Achievement, ShopItem, db
+        # Lista exhaustiva de patrones detectados en las capturas
         correcciones = {
-            "Jal??n": "Jalón", "Tr??ceps": "Tríceps", "B??ceps": "Bíceps",
-            "Pr??s": "Press", "Elevaci??n": "Elevación", "Extensi??n": "Extensión",
-            "Flexi??n": "Flexión", "Abdomi??n": "Abdomen", "Gimn??stico": "Gimnástico",
-            "Pector??l": "Pectoral", "D??a": "Día"
+            "d??a": "día",
+            "p??blica": "pública",
+            "Energ??a": "Energía",
+            "m??s": "más",
+            "pr??ximas": "próximas",
+            "Jal??n": "Jalón",
+            "Tr??ceps": "Tríceps",
+            "B??ceps": "Bíceps",
+            "Pr??s": "Press",
+            "Elevaci??n": "Elevación",
+            "Extensi??n": "Extensión",
+            "Flexi??n": "Flexión",
+            "Gimn??stico": "Gimnástico",
+            "Cintur??n": "Cinturón",
+            "??": "ó" # Fallback para casos genéricos
         }
+        
+        models_to_fix = [
+            (Exercise, ['name', 'description']),
+            (Achievement, ['name', 'description']),
+            (ShopItem, ['name', 'description']),
+            (Routine, ['name', 'description'])
+        ]
+        
         count = 0
-        for e in Exercise.query.all():
-            old = e.name
-            for r, f in correcciones.items(): e.name = e.name.replace(r, f)
-            if e.name != old: count += 1
-        for r in Routine.query.all():
-            old = r.name
-            for ro, fi in correcciones.items(): r.name = r.name.replace(ro, fi)
-            if r.name != old: count += 1
+        for model, fields in models_to_fix:
+            items = model.query.all()
+            for item in items:
+                cambiado = False
+                for field in fields:
+                    val = getattr(item, field)
+                    if val:
+                        new_val = val
+                        for r, f in correcciones.items():
+                            new_val = new_val.replace(r, f)
+                        if new_val != val:
+                            setattr(item, field, new_val)
+                            cambiado = True
+                if cambiado:
+                    count += 1
+        
         db.session.commit()
-        return jsonify({"msg": f"Reparados {count} textos", "status": "success"}), 200
+        return jsonify({
+            "msg": f"Reparación completada. Se han corregido {count} elementos.",
+            "status": "success"
+        }), 200
     except Exception as e:
+        db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
 def is_admin(user_id):
