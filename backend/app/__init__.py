@@ -41,8 +41,12 @@ def create_app(config_class=Config):
     if not os.path.exists(upload_path):
         os.makedirs(upload_path, exist_ok=True)
     
-    # Configuración CORS simplificada
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    # Configuración CORS robusta para producción (Vercel -> Render)
+    CORS(app, resources={r"/api/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }})
 
     from .routes.auth import auth_bp
     from .routes.exercises import exercises_bp

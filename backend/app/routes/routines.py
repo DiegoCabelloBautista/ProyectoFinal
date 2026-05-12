@@ -158,12 +158,15 @@ def toggle_publish(id: int):
 def generate_routine():
     """Generador Inteligente de Rutinas con distribución por músculo"""
     import random, re
+    from flask import current_app
     from ..models import Routine, RoutineExercise, Exercise, db
 
     user_id = get_jwt_identity()
     data = request.get_json()
     prompt = data.get('prompt', '').lower().strip()
     num_exercises = int(data.get('num_exercises', 6))
+    
+    current_app.logger.info(f"🤖 Iniciando generación de rutina para usuario {user_id}. Prompt: {prompt}")
 
     # ── Mapa keyword → nombre exacto en BD ─────────────────────────────────
     keyword_to_db = {
