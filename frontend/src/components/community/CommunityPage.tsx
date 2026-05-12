@@ -399,18 +399,22 @@ const CommunityPage: React.FC = () => {
 
     return (
         <div className="min-h-screen pb-28 text-slate-900 bg-white relative overflow-hidden">
-            {/* Orbs de fondo */}
+            {/* Orbs de fondo optimizados */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="orb w-96 h-96" style={{ background: '#10B981', top: '-10%', right: '-10%', opacity: 0.1 }} />
-                <div className="orb w-80 h-80" style={{ background: '#3B82F6', bottom: '20%', left: '-5%', opacity: 0.08 }} />
+                <div className="orb w-[500px] h-[500px]" style={{ background: '#10B981', top: '-15%', right: '-10%', opacity: 0.12 }} />
+                <div className="orb w-[400px] h-[400px]" style={{ background: '#3B82F6', bottom: '15%', left: '-10%', opacity: 0.08 }} />
             </div>
 
-            <div className="relative z-10 px-6 pt-12 pb-6">
-                <div className="flex items-center gap-3 mb-1">
-                    <Users className="w-6 h-6 text-primary" />
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Comunidad</h1>
+            <div className="relative z-10 px-6 pt-14 pb-6">
+                <div className="flex items-center gap-4 mb-1">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-primary flex items-center justify-center shadow-sm border border-emerald-100">
+                        <Users className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase leading-none">Comunidad</h1>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">GymTrack Discovery</p>
+                    </div>
                 </div>
-                <p className="text-xs font-bold text-slate-400 pl-9 uppercase tracking-widest">GymTrack Discovery</p>
             </div>
 
             {/* Tabs */}

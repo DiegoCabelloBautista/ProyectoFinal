@@ -132,69 +132,77 @@ const CoachDashboard: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-background-dark text-slate-100 pb-24">
-            <header className="px-6 pt-12 pb-6">
+        <div className="min-h-screen bg-white text-slate-900 pb-24 relative overflow-hidden">
+            {/* Orbs de fondo */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="orb w-[500px] h-[500px]" style={{ background: '#3B82F6', top: '-10%', right: '-5%', opacity: 0.08 }} />
+                <div className="orb w-[400px] h-[400px]" style={{ background: '#10B981', bottom: '10%', left: '-10%', opacity: 0.05 }} />
+            </div>
+
+            <header className="px-6 pt-14 pb-6 relative z-10">
                 <div className="flex items-center gap-4 mb-2">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
-                        <span className="material-icons-round text-blue-400 text-3xl">sports</span>
+                    <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center shadow-sm">
+                        <span className="material-icons-round text-blue-500 text-3xl">sports</span>
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold">Panel de Entrenador</h1>
-                        <p className="text-sm text-slate-400">Supervisa el progreso de tus atletas</p>
+                        <h1 className="text-2xl font-black uppercase tracking-tight">Panel de Entrenador</h1>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Gestión de Atletas y Rendimiento</p>
                     </div>
                 </div>
             </header>
 
-            <main className="px-6 space-y-6">
+            <main className="px-6 space-y-8 relative z-10">
                 {/* Search Bar */}
                 <div className="relative">
-                    <span className="material-icons-round absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">search</span>
+                    <span className="material-icons-round absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
                     <input
                         type="text"
                         placeholder="Buscar atleta por nombre..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 pl-12 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500/50 transition-all shadow-sm"
                     />
                 </div>
 
                 <div className="space-y-4">
-                    <h2 className="text-sm font-black text-slate-500 uppercase tracking-widest">Atletas Registrados</h2>
+                    <h2 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Atletas Registrados</h2>
                     
                     {loading ? (
-                        <div className="flex justify-center py-12">
-                            <div className="w-8 h-8 rounded-full border-2 border-t-transparent border-blue-500 animate-spin"></div>
+                        <div className="flex justify-center py-20">
+                            <div className="w-10 h-10 rounded-full border-4 border-slate-100 border-t-blue-500 animate-spin"></div>
                         </div>
                     ) : filteredClients.length === 0 ? (
-                        <p className="text-center text-slate-500 py-12">No se han encontrado atletas.</p>
+                        <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No se han encontrado atletas</p>
+                        </div>
                     ) : (
-                        <div className="grid gap-3">
+                        <div className="grid gap-4">
                             {filteredClients.map((client, index) => (
                                 <motion.div
                                     key={client.id}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: index * 0.05 }}
-                                    className="glass-card p-4 flex items-center justify-between group hover:border-blue-500/30 transition-all"
+                                    className="bg-white border border-slate-100 p-5 rounded-3xl flex items-center justify-between group hover:border-blue-200 hover:shadow-md transition-all shadow-sm"
                                 >
                                     <div className="flex items-center gap-4">
                                         <div 
-                                            className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-lg"
+                                            className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-lg border-2 border-white"
                                             style={{ 
-                                                background: `linear-gradient(135deg, ${client.username_color}, #1e293b)`,
-                                                boxShadow: `0 4px 12px ${client.username_color}20`
+                                                background: `linear-gradient(135deg, ${client.username_color}, #60A5FA)`,
+                                                boxShadow: `0 8px 20px ${client.username_color}30`
                                             }}
                                         >
                                             <span className="material-icons-round text-white">{client.avatar_icon}</span>
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-white text-lg">{client.username}</h3>
-                                            <div className="flex items-center gap-2 mt-0.5">
-                                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 uppercase">
+                                            <h3 className="font-black text-slate-900 text-lg leading-none">{client.username}</h3>
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <span className="text-[9px] font-black px-2 py-0.5 rounded-lg bg-blue-50 text-blue-500 uppercase border border-blue-100 shadow-sm">
                                                     NV. {client.level}
                                                 </span>
-                                                <span className="text-xs text-slate-500">
-                                                    {client.last_workout ? `Último entreno: ${new Date(client.last_workout).toLocaleDateString()}` : 'Sin entrenos aún'}
+                                                <span className="text-[10px] text-slate-400 font-bold">
+                                                    {client.last_workout ? `Último entreno: ${new Date(client.last_workout).toLocaleDateString()}` : 'Sin registros'}
                                                 </span>
                                             </div>
                                         </div>
@@ -203,16 +211,16 @@ const CoachDashboard: React.FC = () => {
                                     <div className="flex items-center gap-2">
                                         <button 
                                             onClick={() => handleNudge(client.id, client.username)}
-                                            className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-orange-400 hover:bg-orange-500/20 transition-all"
+                                            className="w-11 h-11 rounded-2xl bg-orange-50 text-orange-500 hover:bg-orange-500 hover:text-white transition-all flex items-center justify-center border border-orange-100 shadow-sm active:scale-90"
                                             title="Enviar advertencia"
                                         >
-                                            <span className="material-icons-round text-sm">notification_important</span>
+                                            <span className="material-icons-round text-lg">notification_important</span>
                                         </button>
                                         <button 
                                             onClick={() => handleViewStats(client)}
-                                            className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 group-hover:bg-blue-500 group-hover:text-white transition-all"
+                                            className="w-11 h-11 rounded-2xl bg-blue-50 text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all flex items-center justify-center border border-blue-100 shadow-sm active:scale-90"
                                         >
-                                            <span className="material-icons-round">analytics</span>
+                                            <span className="material-icons-round text-lg">analytics</span>
                                         </button>
                                     </div>
                                 </motion.div>
@@ -225,79 +233,83 @@ const CoachDashboard: React.FC = () => {
             {/* Client Stats Modal */}
             <AnimatePresence>
                 {selectedClient && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setSelectedClient(null)}
-                            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
                         />
                         <motion.div
-                            initial={{ y: 100, opacity: 0 }}
+                            initial={{ y: 50, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: 100, opacity: 0 }}
-                            className="relative w-full max-w-lg glass rounded-[2.5rem] p-8 border border-white/10 shadow-2xl overflow-hidden"
+                            exit={{ y: 50, opacity: 0 }}
+                            className="relative w-full max-w-lg bg-white rounded-[3rem] p-8 border border-slate-100 shadow-2xl overflow-hidden"
                         >
-                            <div className="flex items-center gap-6 mb-8">
+                            <div className="absolute top-0 right-0 w-48 h-48 bg-blue-50 rounded-full -mr-24 -mt-24 opacity-50" />
+                            
+                            <div className="flex items-center gap-6 mb-10 relative z-10">
                                 <div 
-                                    className="w-20 h-20 rounded-3xl flex items-center justify-center text-4xl shadow-2xl border-2 border-white/20"
-                                    style={{ background: `linear-gradient(135deg, ${selectedClient.username_color}, #000)` }}
+                                    className="w-24 h-24 rounded-[2rem] flex items-center justify-center text-5xl shadow-2xl border-4 border-white"
+                                    style={{ 
+                                        background: `linear-gradient(135deg, ${selectedClient.username_color}, #60A5FA)`,
+                                        boxShadow: `0 12px 30px ${selectedClient.username_color}40`
+                                    }}
                                 >
                                     <span className="material-icons-round text-white">{selectedClient.avatar_icon}</span>
                                 </div>
                                 <div>
-                                    <h2 className="text-3xl font-black text-white">{selectedClient.username}</h2>
-                                    <p className="text-blue-400 font-bold uppercase tracking-tighter text-sm">Reporte de Desempeño</p>
+                                    <h2 className="text-3xl font-black text-slate-900 leading-none">{selectedClient.username}</h2>
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <span className="text-blue-600 font-black uppercase tracking-widest text-[9px] bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
+                                            Reporte de Desempeño
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
                             {loadingStats ? (
-                                <div className="py-20 flex flex-col items-center gap-4">
-                                    <div className="w-12 h-12 rounded-full border-4 border-white/5 border-t-blue-500 animate-spin" />
-                                    <p className="text-slate-400 animate-pulse">Analizando datos del atleta...</p>
+                                <div className="py-24 flex flex-col items-center gap-4">
+                                    <div className="w-14 h-14 rounded-full border-4 border-slate-50 border-t-blue-500 animate-spin" />
+                                    <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] animate-pulse">Analizando datos del atleta...</p>
                                 </div>
                             ) : clientStats && (
-                                <div className="space-y-8">
+                                <div className="space-y-8 relative z-10">
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-white/5 rounded-3xl p-5 border border-white/5 hover:border-blue-500/20 transition-all group">
-                                            <p className="text-slate-500 text-[10px] font-black uppercase mb-1">Volumen Total</p>
-                                            <p className="text-2xl font-black text-white group-hover:text-blue-400 transition-colors">
-                                                {clientStats.total_volume.toLocaleString()} <span className="text-xs font-medium text-slate-400">kg</span>
+                                        <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 group transition-all hover:bg-white hover:shadow-md">
+                                            <p className="text-slate-400 text-[9px] font-black uppercase mb-1 tracking-widest">Volumen Total</p>
+                                            <p className="text-3xl font-black text-slate-900 group-hover:text-blue-500 transition-colors">
+                                                {clientStats.total_volume.toLocaleString()} <span className="text-[10px] font-black text-slate-400 ml-1">KG</span>
                                             </p>
                                         </div>
-                                        <div className="bg-white/5 rounded-3xl p-5 border border-white/5 hover:border-blue-500/20 transition-all group">
-                                            <p className="text-slate-500 text-[10px] font-black uppercase mb-1">Sesiones</p>
-                                            <p className="text-2xl font-black text-white group-hover:text-blue-400 transition-colors">
+                                        <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 group transition-all hover:bg-white hover:shadow-md">
+                                            <p className="text-slate-400 text-[9px] font-black uppercase mb-1 tracking-widest">Sesiones</p>
+                                            <p className="text-3xl font-black text-slate-900 group-hover:text-blue-500 transition-colors">
                                                 {clientStats.total_sessions}
                                             </p>
                                         </div>
                                     </div>
 
                                     <div>
-                                        <h4 className="text-xs font-black text-slate-500 uppercase mb-4 tracking-widest flex items-center gap-2">
-                                            <span className="material-icons-round text-sm">military_tech</span> Récords Personales (Max. Peso)
+                                        <h4 className="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-[0.2em] flex items-center gap-2 ml-2">
+                                            <span className="material-icons-round text-blue-500 text-sm">military_tech</span> Récords Personales
                                         </h4>
-                                        <div className="space-y-2">
+                                        <div className="space-y-2 max-h-[160px] overflow-y-auto pr-2 scrollbar-hide">
                                             {clientStats.best_lifts.length > 0 ? clientStats.best_lifts.map((lift: any, i: number) => (
-                                                <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 group hover:bg-white/10 transition-all">
-                                                    <span className="text-slate-300 font-medium">{lift.exercise}</span>
-                                                    <span className="text-white font-black">{lift.weight} kg</span>
+                                                <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:bg-white hover:border-blue-100 transition-all shadow-sm">
+                                                    <span className="text-slate-600 font-bold text-sm">{lift.exercise}</span>
+                                                    <span className="text-slate-900 font-black text-sm">{lift.weight} kg</span>
                                                 </div>
                                             )) : (
-                                                <p className="text-slate-500 text-center py-4 text-sm italic">El atleta aún no ha registrado pesos.</p>
+                                                <div className="text-center py-8 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                                                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest italic">Sin registros de fuerza</p>
+                                                </div>
                                             )}
                                         </div>
                                     </div>
 
-                                    <button 
-                                        onClick={() => setSelectedClient(null)}
-                                        className="w-full py-4 rounded-3xl bg-white/5 text-slate-400 font-black uppercase tracking-tighter hover:bg-white/10 transition-all text-xs"
-                                    >
-                                        Cerrar Reporte
-                                    </button>
-
-                                    <div className="pt-4 border-t border-white/5 grid grid-cols-2 gap-3">
+                                    <div className="pt-6 border-t border-slate-100 grid grid-cols-2 gap-4">
                                         <button 
                                             onClick={async () => {
                                                 try {
@@ -305,20 +317,27 @@ const CoachDashboard: React.FC = () => {
                                                     showStatus('success', '¡Recompensa Enviada!', `Has premiado a ${selectedClient.username} con 100 monedas.`);
                                                 } catch(e) { showStatus('error', 'Error', 'No se pudo enviar la recompensa.'); }
                                             }}
-                                            className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 hover:bg-yellow-500/20 transition-all group"
+                                            className="flex flex-col items-center gap-2 p-5 rounded-3xl bg-yellow-50 text-yellow-600 border border-yellow-100 hover:bg-yellow-500 hover:text-white transition-all group shadow-sm active:scale-95"
                                         >
-                                            <span className="material-icons-round text-yellow-500">payments</span>
-                                            <span className="text-[10px] font-black text-yellow-500 uppercase">Premiar Atleta</span>
+                                            <span className="material-icons-round text-2xl group-hover:scale-110 transition-transform">payments</span>
+                                            <span className="text-[9px] font-black uppercase tracking-widest">Premiar Atleta</span>
                                         </button>
                                         
                                         <button 
                                             onClick={() => handleAssignRoutine(selectedClient)}
-                                            className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 transition-all"
+                                            className="flex flex-col items-center gap-2 p-5 rounded-3xl bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-500 hover:text-white transition-all group shadow-sm active:scale-95"
                                         >
-                                            <span className="material-icons-round text-blue-400">assignment_add</span>
-                                            <span className="text-[10px] font-black text-blue-400 uppercase">Asignar Rutina</span>
+                                            <span className="material-icons-round text-2xl group-hover:scale-110 transition-transform">assignment_add</span>
+                                            <span className="text-[9px] font-black uppercase tracking-widest">Asignar Rutina</span>
                                         </button>
                                     </div>
+
+                                    <button 
+                                        onClick={() => setSelectedClient(null)}
+                                        className="w-full py-4 rounded-2xl bg-slate-100 text-slate-500 font-black uppercase tracking-widest hover:bg-slate-200 transition-all text-[10px]"
+                                    >
+                                        Cerrar Reporte
+                                    </button>
                                 </div>
                             )}
                         </motion.div>
@@ -329,39 +348,39 @@ const CoachDashboard: React.FC = () => {
             {/* Status Modal */}
             <AnimatePresence>
                 {statusModal.show && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center px-6">
+                    <div className="fixed inset-0 z-[300] flex items-center justify-center px-6">
                         <motion.div 
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setStatusModal({ ...statusModal, show: false })}
-                            className="absolute inset-0 bg-black/60 backdrop-blur-md"
+                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
                         />
                         <motion.div 
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="relative w-full max-w-sm glass rounded-[2.5rem] p-8 border border-white/10 shadow-2xl text-center"
+                            className="relative w-full max-w-sm bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-2xl text-center overflow-hidden"
                         >
-                            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 ${
-                                statusModal.type === 'success' ? 'bg-green-500/20 text-green-400' :
-                                statusModal.type === 'error' ? 'bg-red-500/20 text-red-400' :
-                                'bg-blue-500/20 text-blue-400'
+                            <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-lg ${
+                                statusModal.type === 'success' ? 'bg-emerald-50 text-primary border border-emerald-100' :
+                                statusModal.type === 'error' ? 'bg-red-50 text-red-500 border border-red-100' :
+                                'bg-blue-50 text-blue-500 border border-blue-100'
                             }`}>
-                                <span className="material-icons-round text-3xl">
+                                <span className="material-icons-round text-4xl">
                                     {statusModal.type === 'success' ? 'check_circle' :
                                      statusModal.type === 'error' ? 'error' : 'info'}
                                 </span>
                             </div>
-                            <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tight">{statusModal.title}</h3>
-                            <p className="text-slate-400 text-sm leading-relaxed mb-8">
+                            <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">{statusModal.title}</h3>
+                            <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8 uppercase tracking-wide">
                                 {statusModal.message}
                             </p>
                             
                             <button 
                                 onClick={() => setStatusModal({ ...statusModal, show: false })}
-                                className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg ${
-                                    statusModal.type === 'success' ? 'bg-green-500 text-white shadow-green-500/20' :
+                                className={`w-full py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] transition-all shadow-xl active:scale-95 ${
+                                    statusModal.type === 'success' ? 'bg-primary text-white shadow-emerald-500/20' :
                                     statusModal.type === 'error' ? 'bg-red-500 text-white shadow-red-500/20' :
                                     'bg-blue-500 text-white shadow-blue-500/20'
                                 }`}
@@ -376,48 +395,49 @@ const CoachDashboard: React.FC = () => {
             {/* Prompt Modal */}
             <AnimatePresence>
                 {promptModal.show && (
-                    <div className="fixed inset-0 z-[150] flex items-center justify-center px-6">
+                    <div className="fixed inset-0 z-[250] flex items-center justify-center px-6">
                         <motion.div 
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => !promptLoading && setPromptModal({ ...promptModal, show: false })}
-                            className="absolute inset-0 bg-black/60 backdrop-blur-md"
+                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
                         />
                         <motion.div 
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
-                            className="relative w-full max-w-sm glass rounded-[2.5rem] p-8 border border-white/10 shadow-2xl"
+                            className="relative w-full max-w-sm bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-2xl"
                         >
-                            <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tight text-center whitespace-pre-line">{promptModal.title}</h3>
+                            <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight text-center whitespace-pre-line leading-tight">{promptModal.title}</h3>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center mb-8">Acción Requerida</p>
                             
-                            <div className="mt-6 mb-8">
+                            <div className="mb-8">
                                 <textarea
                                     autoFocus
                                     placeholder={promptModal.placeholder}
                                     value={promptValue}
                                     onChange={(e) => setPromptValue(e.target.value)}
                                     disabled={promptLoading}
-                                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white focus:outline-none focus:border-blue-500/50 min-h-[100px] resize-none disabled:opacity-50"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-[1.5rem] p-5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500/50 min-h-[120px] resize-none disabled:opacity-50 transition-all shadow-inner"
                                 />
                             </div>
                             
-                            <div className="flex gap-3">
+                            <div className="flex gap-4">
                                 <button 
                                     onClick={() => setPromptModal({ ...promptModal, show: false })}
                                     disabled={promptLoading}
-                                    className="flex-1 py-4 rounded-2xl bg-white/5 text-slate-400 font-bold uppercase tracking-widest text-[10px] hover:bg-white/10 transition-all disabled:opacity-50"
+                                    className="flex-1 py-5 rounded-[1.5rem] bg-slate-100 text-slate-500 font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all disabled:opacity-50 active:scale-95"
                                 >
                                     Cancelar
                                 </button>
                                 <button 
                                     onClick={() => promptModal.onConfirm(promptValue)}
                                     disabled={promptLoading}
-                                    className="flex-1 py-4 rounded-2xl bg-blue-500 text-white font-bold uppercase tracking-widest text-[10px] hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 flex items-center justify-center"
+                                    className="flex-1 py-5 rounded-[1.5rem] bg-blue-500 text-white font-black uppercase tracking-widest text-[10px] hover:bg-blue-600 transition-all shadow-xl shadow-blue-500/20 disabled:opacity-50 flex items-center justify-center active:scale-95"
                                 >
                                     {promptLoading ? (
-                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                     ) : 'Confirmar'}
                                 </button>
                             </div>

@@ -88,70 +88,75 @@ const AdminDashboard: React.FC = () => {
     }
 
     return (
-        <div className="p-6 md:p-8 max-w-7xl mx-auto mb-20 animate-fade-in">
+        <div className="p-6 md:p-8 max-w-7xl mx-auto mb-28 animate-fade-in relative z-10">
             <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-red-500/20 to-orange-500/20 border border-red-500/30 flex items-center justify-center">
-                    <span className="material-icons-round text-red-400">admin_panel_settings</span>
+                <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center shadow-sm">
+                    <span className="material-icons-round text-red-500 text-3xl">admin_panel_settings</span>
                 </div>
                 <div>
-                    <h1 className="text-2xl font-bold text-white">Panel de Administración</h1>
-                    <p className="text-slate-400 text-sm">Gestiona usuarios y permisos de la plataforma</p>
+                    <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Panel de Administración</h1>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Gestión Global de Usuarios</p>
                 </div>
             </div>
 
-            <div className="glass rounded-3xl p-6 overflow-hidden">
-                <h2 className="text-lg font-bold text-white mb-6">Lista de Usuarios</h2>
+            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">Lista de Usuarios</h2>
+                    <div className="px-4 py-1.5 bg-slate-50 rounded-full border border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        {users.length} Usuarios totales
+                    </div>
+                </div>
 
                 {loading ? (
-                    <div className="flex justify-center py-8">
-                        <div className="w-8 h-8 rounded-full border-2 border-t-transparent border-primary animate-spin"></div>
+                    <div className="flex justify-center py-16">
+                        <div className="w-10 h-10 rounded-full border-4 border-slate-100 border-t-primary animate-spin"></div>
                     </div>
                 ) : error ? (
-                    <div className="text-center text-red-400 py-8">{error}</div>
+                    <div className="text-center text-red-500 py-16 bg-red-50 rounded-3xl border border-red-100 font-bold uppercase tracking-widest text-xs">{error}</div>
                 ) : (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto -mx-8 px-8">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="border-b border-slate-800 text-slate-400 text-sm">
-                                    <th className="pb-3 px-4 font-medium">Usuario</th>
-                                    <th className="pb-3 px-4 font-medium">Email</th>
-                                    <th className="pb-3 px-4 font-medium">Rol</th>
-                                    <th className="pb-3 px-4 font-medium">Registro</th>
-                                    <th className="pb-3 px-4 font-medium">Acciones</th>
+                                <tr className="border-b border-slate-100 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
+                                    <th className="pb-4 px-4">Usuario</th>
+                                    <th className="pb-4 px-4">Email</th>
+                                    <th className="pb-4 px-4">Rol</th>
+                                    <th className="pb-4 px-4">Registro</th>
+                                    <th className="pb-4 px-4 text-right">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {users.map(u => (
-                                    <tr key={u.id} className="border-b border-slate-800/50 hover:bg-white/5 transition-colors">
-                                        <td className="py-4 px-4 font-medium text-white">{u.username}</td>
-                                        <td className="py-4 px-4 text-slate-400 text-sm">{u.email}</td>
-                                        <td className="py-4 px-4">
-                                            <span className={`px-2 py-1 rounded-lg text-xs font-bold ${u.role === 'admin' ? 'bg-red-500/20 text-red-400' :
-                                                    u.role === 'trainer' ? 'bg-blue-500/20 text-blue-400' :
-                                                        'bg-slate-700/50 text-slate-300'
+                                    <tr key={u.id} className="group border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                                        <td className="py-5 px-4 font-black text-slate-900 text-sm">{u.username}</td>
+                                        <td className="py-5 px-4 text-slate-500 text-xs font-medium">{u.email}</td>
+                                        <td className="py-5 px-4">
+                                            <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm border ${u.role === 'admin' ? 'bg-red-50 text-red-500 border-red-100' :
+                                                    u.role === 'trainer' ? 'bg-blue-50 text-blue-500 border-blue-100' :
+                                                        'bg-slate-50 text-slate-500 border-slate-100'
                                                 }`}>
                                                 {u.role.toUpperCase()}
                                             </span>
                                         </td>
-                                        <td className="py-4 px-4 text-slate-400 text-sm">
-                                            {new Date(u.created_at).toLocaleDateString()}
+                                        <td className="py-5 px-4 text-slate-400 text-[10px] font-bold">
+                                            {new Date(u.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                                         </td>
-                                        <td className="py-4 px-4">
-                                            <div className="flex items-center gap-2">
+                                        <td className="py-5 px-4">
+                                            <div className="flex items-center justify-end gap-3">
                                                 <select
                                                     value={u.role}
                                                     onChange={(e) => handleRoleChange(u.id, u.username, e.target.value)}
-                                                    className="bg-surface border border-slate-700 rounded-lg text-sm px-2 py-1 text-white focus:outline-none focus:border-primary"
+                                                    className="bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-wider px-3 py-1.5 text-slate-700 focus:outline-none focus:border-primary/50 transition-all cursor-pointer hover:bg-white shadow-sm"
                                                     disabled={u.id === user.id}
                                                 >
-                                                    <option value="user">Usuario</option>
+                                                    <option value="user">Atleta</option>
                                                     <option value="trainer">Entrenador</option>
                                                     <option value="admin">Administrador</option>
                                                 </select>
                                                 {u.id !== user.id && (
                                                     <button
                                                         onClick={() => handleDeleteUser(u.id, u.username)}
-                                                        className="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+                                                        className="w-8 h-8 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center border border-red-100 shadow-sm active:scale-90"
                                                         title="Eliminar usuario"
                                                     >
                                                         <span className="material-icons-round text-sm">delete</span>
@@ -170,42 +175,45 @@ const AdminDashboard: React.FC = () => {
             {/* Custom Modal */}
             <AnimatePresence>
                 {modal.show && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setModal(prev => ({ ...prev, show: false }))}
-                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
                         />
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                            className="relative w-full max-w-sm glass rounded-3xl p-6 shadow-2xl border border-white/10"
+                            className="relative w-full max-w-sm bg-white rounded-[2.5rem] p-8 shadow-2xl border border-slate-100 overflow-hidden"
                         >
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${modal.type === 'danger' ? 'bg-red-500/20 text-red-400' : 'bg-primary/20 text-primary'
+                            {/* Decoración modal */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16 opacity-50" />
+                            
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 relative z-10 ${modal.type === 'danger' ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-primary'
                                 }`}>
-                                <span className="material-icons-round">
+                                <span className="material-icons-round text-3xl">
                                     {modal.type === 'danger' ? 'warning' : 'info'}
                                 </span>
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">{modal.title}</h3>
-                            <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                            <h3 className="text-xl font-black text-slate-900 mb-2 relative z-10 uppercase tracking-tight">{modal.title}</h3>
+                            <p className="text-slate-500 text-xs font-medium leading-relaxed mb-8 relative z-10 uppercase tracking-wider">
                                 {modal.message}
                             </p>
-                            <div className="flex gap-3">
+                            <div className="flex gap-4 relative z-10">
                                 <button
                                     onClick={() => setModal(prev => ({ ...prev, show: false }))}
-                                    className="flex-1 py-3 rounded-xl bg-white/5 text-white font-bold text-sm hover:bg-white/10 transition-colors"
+                                    className="flex-1 py-4 rounded-2xl bg-slate-100 text-slate-600 font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     onClick={modal.onConfirm}
-                                    className={`flex-1 py-3 rounded-xl font-bold text-sm text-white shadow-lg transition-all active:scale-95 ${modal.type === 'danger'
-                                            ? 'bg-gradient-to-r from-red-500 to-rose-600 shadow-red-500/20'
-                                            : 'bg-gradient-to-r from-primary to-blue-600 shadow-primary/20'
+                                    className={`flex-1 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest text-white shadow-xl transition-all active:scale-95 ${modal.type === 'danger'
+                                            ? 'bg-red-500 shadow-red-500/30'
+                                            : 'bg-primary shadow-emerald-500/30'
                                         }`}
                                 >
                                     Confirmar
