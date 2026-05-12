@@ -27,9 +27,13 @@ class Config:
     # Argumentos de conexión
     connect_args = {}
     
-    # Si estamos en Render y hay una DATABASE_URL, activamos SSL para Aiven
-    if os.environ.get('DATABASE_URL') and 'render' not in os.environ.get('DATABASE_URL', ''):
-        connect_args["ssl"] = {"ca": "/etc/ssl/certs/ca-certificates.crt"}
+    # Si estamos en Aiven, forzamos SSL pero saltamos la verificación de certificado
+    if os.environ.get('DATABASE_URL') and 'aivencloud.com' in os.environ.get('DATABASE_URL', ''):
+        import ssl
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        connect_args["ssl"] = ctx
         connect_args["connect_timeout"] = 10
     
     SQLALCHEMY_ENGINE_OPTIONS["connect_args"] = connect_args
