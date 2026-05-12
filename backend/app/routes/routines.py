@@ -156,137 +156,137 @@ def toggle_publish(id: int):
 @routines_bp.route('/generate', methods=['POST'])
 @jwt_required()
 def generate_routine():
-    """Generador Inteligente de Rutinas con distribución por músculo"""
-    import random, re
+    """Generador Inteligente de Rutinas con IA (Gemini) y Fallback local"""
+    import random, re, os, json
+    import google.generativeai as genai
     from flask import current_app
     from ..models import Routine, RoutineExercise, Exercise, db
 
     user_id = get_jwt_identity()
     data = request.get_json()
-    prompt = data.get('prompt', '').lower().strip()
+    if not data:
+        return jsonify({"msg": "No se proporcionaron datos"}), 400
+        
+    prompt = data.get('prompt', '').strip()
     num_exercises = int(data.get('num_exercises', 6))
     
-    current_app.logger.info(f"🤖 Iniciando generación de rutina para usuario {user_id}. Prompt: {prompt}")
+    current_app.logger.info(f"🤖 Generando rutina para usuario {user_id}. Prompt: {prompt}")
 
-    # ── Mapa keyword → nombre exacto en BD ─────────────────────────────────
-    keyword_to_db = {
-        'Pecho':       ['pecho', 'chest', 'empuje', 'push', 'press', 'pectoral'],
-        'Espalda':     ['espalda', 'back', 'tiron', 'tirón', 'pull', 'remo', 'lats', 'dorsal'],
-        'Hombros':     ['hombro', 'hombros', 'shoulder', 'deltoid', 'militar', 'posterior', 'deltoide'],
-        'Bíceps':      ['bicep', 'bícep', 'biceps', 'bíceps', 'bic'],
-        'Tríceps':     ['tricep', 'trícep', 'triceps', 'tríceps', 'tric'],
-        'Piernas':     ['pierna', 'piernas', 'leg', 'legs', 'sentadilla', 'cuadriceps', 'cuádriceps', 'isquio', 'quad'],
-        'Glúteos':     ['gluteo', 'glúteo', 'gluteos', 'glúteos', 'cadera', 'hip'],
-        'Abdominales': ['core', 'abdomen', 'abs', 'abdominal', 'abdominales', 'oblicuo'],
-        'Gemelos':     ['gemelo', 'gemelos', 'pantorrilla', 'calf'],
-        'Cardio':      ['cardio', 'aerobico', 'aeróbico', 'correr', 'hiit'],
-    }
+    # --- 1. INTENTAR GENERACIÓN CON IA (GEMINI) ---
+    api_key = os.environ.get('GEMINI_API_KEY')
+    ai_success = False
+    ai_exercises = []
 
-    def keyword_to_group(word):
-        """Devuelve el nombre del grupo muscular en BD dado una keyword."""
-        for db_group, keywords in keyword_to_db.items():
-            if word in keywords:
-                return db_group
-        return None
+    if api_key:
+        try:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            # Obtener lista de ejercicios disponibles para que la IA elija nombres exactos
+            all_db_exercises = Exercise.query.all()
+            exercise_names = [ex.name for ex in all_db_exercises]
+            
+            ai_prompt = f"""
+            Actúa como un entrenador personal experto. El usuario quiere una rutina con este objetivo: "{prompt}".
+            Tengo estos ejercicios disponibles en mi base de datos: {", ".join(exercise_names)}.
+            
+            Selecciona exactamente {num_exercises} ejercicios de la lista anterior que mejor se adapten al objetivo.
+            Responde ÚNICAMENTE con un objeto JSON con este formato:
+            {{
+              "routine_name": "Nombre creativo de la rutina",
+              "exercises": [
+                {{"name": "Nombre exacto del ejercicio", "sets": 3, "reps": "10-12"}},
+                ...
+              ]
+            }}
+            """
+            
+            response = model.generate_content(ai_prompt)
+            # Extraer JSON de la respuesta (a veces viene con markdown ```json)
+            raw_text = response.text
+            json_match = re.search(r'\{.*\}', raw_text, re.DOTALL)
+            if json_match:
+                ai_data = json.loads(json_match.group())
+                routine_name = ai_data.get('routine_name', 'Rutina Personalizada IA')
+                
+                for ex_item in ai_data.get('exercises', []):
+                    ex_obj = Exercise.query.filter_by(name=ex_item['name']).first()
+                    if ex_obj:
+                        ai_exercises.append({
+                            'obj': ex_obj,
+                            'sets': ex_item.get('sets', 3),
+                            'reps': ex_item.get('reps', '10-12')
+                        })
+                
+                if len(ai_exercises) > 0:
+                    ai_success = True
+                    current_app.logger.info(f"✨ IA generó con éxito {len(ai_exercises)} ejercicios.")
+        except Exception as e:
+            current_app.logger.error(f"❌ Error en Gemini AI: {str(e)}")
+            ai_success = False
 
-    # ── Nombres de entrenamiento según músculos ─────────────────────────────
-    combo_names = {
-        frozenset(['Pecho', 'Tríceps']):              'Push Day — Pecho y Tríceps',
-        frozenset(['Pecho', 'Tríceps', 'Hombros']):   'Push Day — Pecho, Hombros y Tríceps',
-        frozenset(['Espalda', 'Bíceps']):             'Pull Day — Espalda y Bíceps',
-        frozenset(['Espalda', 'Bíceps', 'Hombros']): 'Pull Day — Espalda, Hombros y Bíceps',
-        frozenset(['Piernas']):                        'Leg Day',
-        frozenset(['Piernas', 'Glúteos']):            'Leg Day — Piernas y Glúteos',
-        frozenset(['Glúteos']):                        'Glute Day',
-        frozenset(['Abdominales']):                    'Core Day',
-        frozenset(['Hombros']):                        'Shoulder Day',
-        frozenset(['Pecho']):                          'Chest Day',
-        frozenset(['Espalda']):                        'Back Day',
-        frozenset(['Bíceps', 'Tríceps']):             'Arm Day — Bíceps y Tríceps',
-    }
+    # --- 2. FALLBACK A LÓGICA LOCAL (Si la IA falla o no hay API Key) ---
+    if not ai_success:
+        current_app.logger.info("⚠️ Usando lógica de fallback local...")
+        prompt_low = prompt.lower()
+        keyword_to_db = {
+            'Pecho':       ['pecho', 'chest', 'empuje', 'push', 'press', 'pectoral'],
+            'Espalda':     ['espalda', 'back', 'tiron', 'tirón', 'pull', 'remo', 'lats', 'dorsal'],
+            'Hombros':     ['hombro', 'hombros', 'shoulder', 'deltoid', 'militar', 'posterior', 'deltoide'],
+            'Bíceps':      ['bicep', 'bícep', 'biceps', 'bíceps', 'bic'],
+            'Tríceps':     ['tricep', 'trícep', 'triceps', 'tríceps', 'tric'],
+            'Piernas':     ['pierna', 'piernas', 'leg', 'legs', 'sentadilla', 'cuadriceps', 'cuádriceps', 'isquio', 'quad'],
+            'Glúteos':     ['gluteo', 'glúteo', 'gluteos', 'glúteos', 'cadera', 'hip'],
+            'Abdominales': ['core', 'abdomen', 'abs', 'abdominal', 'abdominales', 'oblicuo'],
+            'Gemelos':     ['gemelo', 'gemelos', 'pantorrilla', 'calf'],
+            'Cardio':      ['cardio', 'aerobico', 'aeróbico', 'correr', 'hiit'],
+        }
 
-    def build_name(groups):
-        key = frozenset(groups)
-        if key in combo_names:
-            return combo_names[key]
-        parts = list(groups)[:3]
-        return 'Entrenamiento de ' + ' · '.join(parts)
-
-    # ── 1. Intentar detectar distribución explícita: "3 pecho 2 tricep 1 hombro"
-    # Patrón: dígito seguido (opcionalmente de "de") y luego una palabra
-    explicit = re.findall(r'(\d+)\s+(?:de\s+)?([a-záéíóúüñ]+)', prompt)
-
-    selected = []
-    detected_groups = []
-
-    if explicit:
-        for count_str, muscle_word in explicit:
-            db_group = keyword_to_group(muscle_word)
-            if db_group:
-                count = int(count_str)
-                group_pool = Exercise.query.filter_by(muscle_group=db_group).all()
-                if group_pool:
-                    to_pick = min(count, len(group_pool))
-                    picked = random.sample(group_pool, to_pick)
-                    selected.extend(picked)
-                    if db_group not in detected_groups:
-                        detected_groups.append(db_group)
-
-    # ── 2. Fallback: detección por keywords + num_exercises ─────────────────
-    if not selected:
-        target_db_groups = set()
-        for db_group, keywords in keyword_to_db.items():
-            if any(kw in prompt for kw in keywords):
-                target_db_groups.add(db_group)
-
-        if target_db_groups:
-            available = Exercise.query.filter(
-                Exercise.muscle_group.in_(list(target_db_groups))
-            ).all()
-            detected_groups = list(target_db_groups)
+        detected_groups = [group for group, kws in keyword_to_db.items() if any(kw in prompt_low for kw in kws)]
+        
+        if detected_groups:
+            available = Exercise.query.filter(Exercise.muscle_group.in_(detected_groups)).all()
         else:
             available = Exercise.query.all()
             detected_groups = ['Full Body']
 
         if not available:
-            available = Exercise.query.all()
+            return jsonify({"msg": "No hay ejercicios disponibles en la BD."}), 400
 
-        if not available:
-            return jsonify({"msg": "No hay ejercicios en la BD."}), 400
+        n = min(num_exercises, len(available))
+        selected_objs = random.sample(available, n)
+        ai_exercises = [{'obj': ex, 'sets': random.choice([3, 4]), 'reps': random.choice(['8-10', '10-12'])} for ex in selected_objs]
+        routine_name = f"Entrenamiento de {' · '.join(detected_groups[:3])}"
 
-        n = max(1, min(num_exercises, len(available)))
-        selected = random.sample(available, n)
-
-    if not selected:
-        return jsonify({"msg": "No se pudieron seleccionar ejercicios con esos criterios."}), 400
-
-    # ── 3. Nombre limpio ────────────────────────────────────────────────────
-    routine_name = build_name(detected_groups)
-
-    # ── 4. Guardar en BD ────────────────────────────────────────────────────
-    new_routine = Routine(
-        user_id=user_id,
-        name=routine_name[:64],
-        description="Generada por el Asistente Inteligente de GymTrackPro.",
-        is_public=False
-    )
-    db.session.add(new_routine)
-    db.session.flush()
-
-    for i, ex in enumerate(selected):
-        re_obj = RoutineExercise(
-            routine_id=new_routine.id,
-            exercise_id=ex.id,
-            order=i,
-            sets=random.choice([3, 4]),
-            reps_target=random.choice(['8-10', '10-12', '12-15'])
+    # --- 3. GUARDAR EN BD ---
+    try:
+        new_routine = Routine(
+            user_id=user_id,
+            name=routine_name[:64],
+            description="Generada por el Asistente Inteligente de GymTrackPro.",
+            is_public=False
         )
-        db.session.add(re_obj)
+        db.session.add(new_routine)
+        db.session.flush()
 
-    db.session.commit()
-    
-    # Comprobar logros (Creación de rutinas via AI)
-    from ..utils.gamification import check_user_achievements
-    check_user_achievements(user_id)
-    
-    return jsonify({"msg": "Éxito", "id": new_routine.id, "name": new_routine.name}), 201
+        for i, item in enumerate(ai_exercises):
+            re_obj = RoutineExercise(
+                routine_id=new_routine.id,
+                exercise_id=item['obj'].id,
+                order=i,
+                sets=item['sets'],
+                reps_target=item['reps']
+            )
+            db.session.add(re_obj)
+
+        db.session.commit()
+        
+        # Comprobar logros
+        from ..utils.gamification import check_user_achievements
+        check_user_achievements(user_id)
+        
+        return jsonify({"msg": "Éxito", "id": new_routine.id, "name": new_routine.name}), 201
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"💥 Error guardando rutina: {str(e)}")
+        return jsonify({"msg": "Error interno al guardar la rutina", "error": str(e)}), 500
