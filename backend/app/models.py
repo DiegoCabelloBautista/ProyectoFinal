@@ -154,7 +154,7 @@ class Exercise(db.Model):
 class Routine(db.Model):
     __tablename__ = 'routines'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -170,8 +170,8 @@ class Routine(db.Model):
 class RoutineReview(db.Model):
     __tablename__ = 'routine_reviews'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    routine_id = db.Column(db.Integer, db.ForeignKey('routines.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    routine_id = db.Column(db.Integer, db.ForeignKey('routines.id'), nullable=False, index=True)
     rating = db.Column(db.Integer, nullable=False) # 1 a 5
     comment = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -181,8 +181,8 @@ class RoutineReview(db.Model):
 class RoutineExercise(db.Model):
     __tablename__ = 'routine_exercises'
     id = db.Column(db.Integer, primary_key=True)
-    routine_id = db.Column(db.Integer, db.ForeignKey('routines.id'), nullable=False)
-    exercise_id = db.Column(db.Integer, db.ForeignKey('exercises.id'), nullable=False)
+    routine_id = db.Column(db.Integer, db.ForeignKey('routines.id'), nullable=False, index=True)
+    exercise_id = db.Column(db.Integer, db.ForeignKey('exercises.id'), nullable=False, index=True)
     order = db.Column(db.Integer)
     sets = db.Column(db.Integer, default=3)
     reps_target = db.Column(db.String(20)) # e.g. "8-12"
@@ -190,8 +190,8 @@ class RoutineExercise(db.Model):
 class WorkoutSession(db.Model):
     __tablename__ = 'workout_sessions'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    routine_id = db.Column(db.Integer, db.ForeignKey('routines.id', ondelete='SET NULL'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    routine_id = db.Column(db.Integer, db.ForeignKey('routines.id', ondelete='SET NULL'), nullable=True, index=True)
     start_time = db.Column(db.DateTime, default=datetime.utcnow)
     end_time = db.Column(db.DateTime)
     
@@ -200,8 +200,8 @@ class WorkoutSession(db.Model):
 class WorkoutLog(db.Model):
     __tablename__ = 'workout_logs'
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.Integer, db.ForeignKey('workout_sessions.id'), nullable=False)
-    exercise_id = db.Column(db.Integer, db.ForeignKey('exercises.id'), nullable=False)
+    session_id = db.Column(db.Integer, db.ForeignKey('workout_sessions.id'), nullable=False, index=True)
+    exercise_id = db.Column(db.Integer, db.ForeignKey('exercises.id'), nullable=False, index=True)
     set_number = db.Column(db.Integer, nullable=False)
     weight = db.Column(db.Float)
     reps = db.Column(db.Integer)

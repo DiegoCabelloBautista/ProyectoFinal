@@ -14,7 +14,13 @@ class Config:
             db_url = db_url.split('?')[0]
     
     SQLALCHEMY_DATABASE_URI = db_url or 'mysql+pymysql://root:8326@localhost/gymtrack_pro'
-    SQLALCHEMY_ENGINE_OPTIONS = {"connect_args": {"ssl": {}}} if os.environ.get('DATABASE_URL') else {}
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+        "pool_size": 10,
+        "max_overflow": 20,
+        "connect_args": {"ssl": {}} if os.environ.get('DATABASE_URL') else {}
+    }
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key'
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
