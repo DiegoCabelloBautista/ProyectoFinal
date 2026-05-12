@@ -70,15 +70,18 @@ const CoachDashboard: React.FC = () => {
 
     const handleOpenRoutineSelector = async (client: any) => {
         try {
-            setLoadingStats(true); // Reutilizar loader
+            setLoadingStats(true);
             const routinesRes = await routinesApi.getAll();
-            setAvailableRoutines(routinesRes.data);
-            if (routinesRes.data.length === 0) {
+            const routinesData = Array.isArray(routinesRes.data) ? routinesRes.data : [];
+            setAvailableRoutines(routinesData);
+            
+            if (routinesData.length === 0) {
                 showStatus('info', 'Sin Rutinas', 'No tienes rutinas creadas para asignar.');
                 return;
             }
             setShowRoutineModal(true);
         } catch (err) {
+            console.error('Error al cargar rutinas:', err);
             showStatus('error', 'Error', 'No se pudieron cargar tus rutinas.');
         } finally {
             setLoadingStats(false);
@@ -369,7 +372,7 @@ const CoachDashboard: React.FC = () => {
                             </div>
 
                             <div className="flex-1 overflow-y-auto pr-2 space-y-3 mb-8 scrollbar-hide">
-                                {availableRoutines.map((routine) => (
+                                {Array.isArray(availableRoutines) && availableRoutines.map((routine) => (
                                     <div 
                                         key={routine.id} 
                                         className="bg-slate-50 border border-slate-100 p-5 rounded-2xl flex items-center justify-between group hover:border-emerald-200 hover:bg-white transition-all shadow-sm"

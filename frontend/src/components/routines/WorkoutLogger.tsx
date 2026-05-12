@@ -313,27 +313,24 @@ const WorkoutLogger: React.FC = () => {
 
             <div className="fixed bottom-0 left-0 right-0 p-5 bg-white/80 backdrop-blur-xl border-t border-slate-100 flex flex-col gap-4 z-50">
                 {restTimer !== null && restTimer > 0 && (
-                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-2xl animate-in slide-in-from-bottom-5">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-emerald-500 rounded-xl text-white animate-pulse shadow-lg shadow-emerald-500/20">
-                                <Clock className="w-5 h-5" />
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2 sm:p-4 flex items-center justify-between shadow-2xl animate-in slide-in-from-bottom-5">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <div className="p-2 bg-emerald-500 rounded-xl text-white animate-pulse shrink-0">
+                                <Clock className="w-4 h-4" />
                             </div>
-                            <div>
-                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em]">Descanso</p>
-                                <p className="text-xl font-black text-white font-mono">{formatTime(restTimer)}</p>
+                            <div className="min-w-0">
+                                <p className="text-[7px] text-slate-500 font-black uppercase tracking-widest truncate">Descanso</p>
+                                <p className="text-base sm:text-xl font-black text-white font-mono leading-none">{formatTime(restTimer)}</p>
                             </div>
                         </div>
-                        <div className="flex gap-2">
-                            {/* Botones de ajuste fino -10s y +10s */}
-                            <button onClick={() => setRestTimer(r => Math.max(0, (r || 0) - 10))} className="h-10 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-1.5 border border-slate-700 shadow-sm group active:scale-95">
-                                <Minus className="w-3.5 h-3.5 text-white/50 group-hover:text-white transition-colors" />
-                                <span className="text-[10px] font-black text-white">10s</span>
+                        <div className="flex gap-1 sm:gap-2 shrink-0 ml-1">
+                            <button onClick={() => setRestTimer(r => Math.max(0, (r || 0) - 10))} className="h-9 w-9 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors flex items-center justify-center border border-slate-700 active:scale-95">
+                                <Minus className="w-4 h-4 text-white" />
                             </button>
-                            <button onClick={() => setRestTimer(r => (r || 0) + 10)} className="h-10 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-1.5 border border-slate-700 shadow-sm group active:scale-95">
-                                <Plus className="w-3.5 h-3.5 text-white/50 group-hover:text-white transition-colors" />
-                                <span className="text-[10px] font-black text-white">10s</span>
+                            <button onClick={() => setRestTimer(r => (r || 0) + 10)} className="h-9 w-9 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors flex items-center justify-center border border-slate-700 active:scale-95">
+                                <Plus className="w-4 h-4 text-white" />
                             </button>
-                            <button onClick={() => setRestTimer(null)} className="px-4 h-10 rounded-xl bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all">
+                            <button onClick={() => setRestTimer(null)} className="px-2.5 h-9 rounded-xl bg-emerald-500 text-white font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all">
                                 Saltar
                             </button>
                         </div>

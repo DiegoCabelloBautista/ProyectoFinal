@@ -128,6 +128,11 @@ const RoutineList: React.FC = () => {
                                                 <Globe className="w-2.5 h-2.5" /> Pública
                                             </span>
                                         )}
+                                        {routine.is_assigned && (
+                                            <span className="flex items-center gap-1 text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
+                                                <span className="material-icons-round text-[10px]">workspace_premium</span> Asignada por Coach
+                                            </span>
+                                        )}
                                     </div>
                                     <p className="text-xs text-slate-400 font-medium line-clamp-2 leading-relaxed">{routine.description || 'Sin descripción'}</p>
                                     <div className="flex items-center gap-3 mt-3">
@@ -135,6 +140,15 @@ const RoutineList: React.FC = () => {
                                             <Calendar className="w-3 h-3 text-slate-400" />
                                             {new Date(routine.created_at).toLocaleDateString()}
                                         </div>
+                                        {routine.author && (typeof routine.author === 'string' ? routine.author !== "Mí" : routine.author.username) && (
+                                            <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded-lg text-[9px] text-emerald-600 font-black uppercase tracking-widest border border-emerald-100">
+                                                <span className="material-icons-round text-[11px]">sports</span>
+                                                Coach: {typeof routine.author === 'string' ? routine.author : routine.author.username}
+                                                {routine.is_verified && (
+                                                    <span className="material-icons-round text-blue-500" style={{ fontSize: '10px' }}>verified</span>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="flex gap-2 shrink-0">

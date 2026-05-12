@@ -203,6 +203,7 @@ def get_leaderboard():
             'avatar_url': u.avatar_url,
             'username_color': u.username_color,
             'title': u.title,
+            'role': u.role,
             'is_current_user': u.id == current_user_id
         })
         

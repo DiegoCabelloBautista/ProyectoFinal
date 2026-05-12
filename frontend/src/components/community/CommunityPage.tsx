@@ -7,7 +7,7 @@ interface Author { id: number; username: string; level: number; avatar_icon: str
 interface CommunityRoutine {
     id: number; name: string; description: string; created_at: string;
     exercise_count: number; likes: number; user_liked: boolean; user_saved: boolean;
-    is_own: boolean; avg_rating: number; review_count: number; user_rating: number; author: Author;
+    is_own: boolean; avg_rating: number; review_count: number; user_rating: number; author: Author & { is_verified?: boolean };
 }
 interface Exercise { exercise_name: string; muscle_group: string; sets: number; reps_target: string; }
 
@@ -205,7 +205,12 @@ const RoutineCard: React.FC<{
                             )}
                         </div>
                         <div className="flex flex-col min-w-0">
-                            <span className="text-[11px] font-black leading-none group-hover:underline truncate" style={{ color: routine.author?.username_color }}>{routine.author?.username}</span>
+                            <div className="flex items-center gap-1">
+                                <span className="text-[11px] font-black leading-none group-hover:underline truncate" style={{ color: routine.author?.username_color }}>{routine.author?.username}</span>
+                                {routine.author?.is_verified && (
+                                    <span className="material-icons-round text-blue-500" style={{ fontSize: '11px' }}>verified</span>
+                                )}
+                            </div>
                             <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Nivel {routine.author?.level}</span>
                         </div>
                     </div>
@@ -388,7 +393,7 @@ const CommunityPage: React.FC = () => {
 
     const filtered = routines.filter(r =>
         r.name.toLowerCase().includes(search.toLowerCase()) ||
-        r.author?.username.toLowerCase().includes(search.toLowerCase())
+        (typeof r.author === 'string' ? r.author : r.author?.username || '').toLowerCase().includes(search.toLowerCase())
     );
 
     const tabs = [
@@ -470,6 +475,9 @@ const CommunityPage: React.FC = () => {
                                 <div className="flex-1 min-w-0" onClick={() => navigate(`/user/${user.id}`)}>
                                     <div className="flex items-center gap-2">
                                         <h3 className="font-black text-base truncate" style={{ color: user.username_color || '#1e293b' }}>{user.username}</h3>
+                                        {(user.role === 'admin' || user.role === 'trainer') && (
+                                            <span className="material-icons-round text-blue-500" style={{ fontSize: '14px' }}>verified</span>
+                                        )}
                                         {user.is_current_user && <span className="px-2 py-0.5 rounded-full text-[8px] font-black bg-slate-900 text-white uppercase tracking-widest shadow-lg shadow-slate-900/20">Tú</span>}
                                     </div>
                                     <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest truncate mt-1">Nv.{user.level} {user.title && `· ${user.title}`}</p>

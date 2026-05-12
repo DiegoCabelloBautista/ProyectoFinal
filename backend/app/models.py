@@ -44,17 +44,26 @@ class User(db.Model):
     trainer_note = db.Column(db.String(255), default=None)
     trainer_note_date = db.Column(db.DateTime, default=None)
 
-    routines = db.relationship('Routine', backref='author', lazy='dynamic')
-    sessions = db.relationship('WorkoutSession', backref='user', lazy='dynamic')
-    achievements = db.relationship('UserAchievement', backref='user', lazy='dynamic')
-    owned_items = db.relationship('UserItem', backref='owner', lazy='dynamic')
+    routines = db.relationship('Routine', backref='author', lazy='dynamic', cascade='all, delete-orphan')
+    sessions = db.relationship('WorkoutSession', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    achievements = db.relationship('UserAchievement', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    owned_items = db.relationship('UserItem', backref='owner', lazy='dynamic', cascade='all, delete-orphan')
     
-    # Relación M:N de seguidores
+    # Relación M:N de seguidores con cascada manual en tabla intermedia
     followed = db.relationship(
         'User', secondary=followers,
         primaryjoin=(followers.c.follower_id == id),
         secondaryjoin=(followers.c.followed_id == id),
-        backref=db.backref('followers', lazy='dynamic'), lazy='dynamic')
+        backref=db.backref('followers', lazy='dynamic', cascade='all, delete'), 
+        lazy='dynamic',
+        cascade='all, delete'
+    )
+    
+    # Nuevas relaciones para asegurar el borrado completo
+    likes = db.relationship('RoutineLike', backref='user_who_liked', cascade='all, delete-orphan')
+    saved_routines = db.relationship('SavedRoutine', backref='user_who_saved', cascade='all, delete-orphan')
+    body_metrics = db.relationship('BodyMetric', backref='user', cascade='all, delete-orphan')
+    routine_reviews_list = db.relationship('RoutineReview', backref='reviewer', cascade='all, delete-orphan')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -178,7 +187,7 @@ class RoutineReview(db.Model):
     comment = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    user = db.relationship('User', backref=db.backref('routine_reviews', lazy='dynamic'))
+    # Relación gestionada desde el modelo User con cascada
 
 class RoutineExercise(db.Model):
     __tablename__ = 'routine_exercises'
@@ -286,4 +295,5 @@ class SavedRoutine(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     original_routine_id = db.Column(db.Integer, db.ForeignKey('routines.id'), nullable=False)
     saved_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_assigned = db.Column(db.Boolean, default=False) # True si la asignó un coach
     __table_args__ = (db.UniqueConstraint('user_id', 'original_routine_id', name='uq_save'),)

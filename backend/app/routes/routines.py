@@ -8,15 +8,39 @@ routines_bp = Blueprint('routines', __name__)
 @jwt_required()
 def get_routines():
     user_id = get_jwt_identity()
-    routines = Routine.query.filter_by(user_id=user_id).all()
-    return jsonify([{
+    
+    # 1. Obtener rutinas creadas por el usuario
+    own_routines = Routine.query.filter_by(user_id=user_id).all()
+    res = [{
         "id": r.id,
         "name": r.name,
         "description": r.description,
         "created_at": r.created_at.isoformat(),
         "is_public": r.is_public,
         "music_url": r.music_url,
-    } for r in routines]), 200
+        "is_assigned": False,
+        "author": "Mí" # Opcional: indicar que es propia
+    } for r in own_routines]
+    
+    # 2. Obtener rutinas guardadas o asignadas (de otros autores)
+    from ..models import SavedRoutine
+    saved = SavedRoutine.query.filter_by(user_id=user_id).all()
+    for s in saved:
+        r = Routine.query.get(s.original_routine_id)
+        if r:
+            res.append({
+                "id": r.id,
+                "name": r.name,
+                "description": r.description,
+                "created_at": r.created_at.isoformat(),
+                "is_public": r.is_public,
+                "music_url": r.music_url,
+                "is_assigned": s.is_assigned,
+                "author": r.author.username if r.author else "Desconocido",
+                "is_verified": r.author.role in ['admin', 'trainer'] if r.author else False
+            })
+            
+    return jsonify(res), 200
 
 
 @routines_bp.route('', methods=['POST'])

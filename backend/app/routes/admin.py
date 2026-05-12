@@ -273,20 +273,35 @@ def assign_routine(client_id):
         if not routine_id:
             return jsonify({"msg": "ID de rutina requerido"}), 400
             
-        # En una versión completa, esto crearía un registro en una tabla de asignaciones.
-        # Para el TFG, vamos a simularlo añadiendo una nota especial al usuario.
-        client = User.query.get(client_id)
+        # Buscar cliente y rutina
         from ..models import Routine
+        client = User.query.get(client_id)
         routine = Routine.query.get(routine_id)
         
         if not client or not routine:
             return jsonify({"msg": "Cliente o rutina no encontrada"}), 404
             
+        # 1. Enviar nota al usuario
         client.trainer_note = f"TE HE ASIGNADO UNA NUEVA RUTINA: '{routine.name}'. ¡A darle caña!"
         client.trainer_note_date = datetime.utcnow()
+        
+        # 2. Guardar la rutina en la biblioteca del usuario
+        from ..models import SavedRoutine
+        # Verificar si ya la tiene
+        existing_save = SavedRoutine.query.filter_by(user_id=client_id, original_routine_id=routine_id).first()
+        if not existing_save:
+            new_save = SavedRoutine(
+                user_id=client_id,
+                original_routine_id=routine_id,
+                is_assigned=True
+            )
+            db.session.add(new_save)
+        else:
+            existing_save.is_assigned = True # Marcar como asignada aunque ya la tuviera
+            
         db.session.commit()
         
-        return jsonify({"msg": "Rutina asignada correctamente"}), 200
+        return jsonify({"msg": "Rutina asignada correctamente y añadida a la biblioteca del atleta"}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"msg": "Error al asignar rutina", "error": str(e)}), 500

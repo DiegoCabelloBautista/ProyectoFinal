@@ -146,18 +146,26 @@ const Dashboard: React.FC = () => {
                             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
                         />
                         <motion.div 
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="relative w-full max-w-sm glass rounded-[2.5rem] p-8 border border-white/10 shadow-2xl text-center"
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="relative w-full max-w-sm bg-white rounded-[3rem] p-10 border border-slate-100 shadow-2xl text-center overflow-hidden"
                         >
-                            <div className="w-16 h-16 rounded-2xl bg-orange-500/20 flex items-center justify-center mx-auto mb-6">
-                                <span className="material-icons-round text-orange-400 text-3xl">notification_important</span>
+                            {/* Decoración de fondo */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50 rounded-full -mr-16 -mt-16 opacity-50" />
+                            
+                            <div className="w-20 h-20 rounded-[2rem] bg-orange-50 text-orange-500 flex items-center justify-center mx-auto mb-8 border border-orange-100 shadow-sm relative z-10">
+                                <span className="material-icons-round text-4xl">notification_important</span>
                             </div>
-                            <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tight">Mensaje de tu Coach</h3>
-                            <p className="text-slate-300 text-sm leading-relaxed mb-8">
-                                "{user.trainer_note}"
-                            </p>
+                            
+                            <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight relative z-10">Mensaje de tu Coach</h3>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 relative z-10">Aviso importante</p>
+                            
+                            <div className="bg-slate-50 rounded-3xl p-6 mb-8 border border-slate-100 relative z-10">
+                                <p className="text-slate-600 text-sm font-medium leading-relaxed italic">
+                                    "{user.trainer_note}"
+                                </p>
+                            </div>
                             
                             <button 
                                 onClick={async () => {
@@ -168,15 +176,18 @@ const Dashboard: React.FC = () => {
                                         console.error(e);
                                     }
                                 }}
-                                className="w-full py-4 rounded-2xl bg-orange-500 text-white font-bold uppercase tracking-widest text-xs hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20"
+                                className="w-full py-5 rounded-2xl bg-emerald-500 text-white font-black uppercase tracking-widest text-[10px] hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-500/20 active:scale-95 relative z-10"
                             >
                                 Entendido, coach
                             </button>
                             
                             {user.trainer_note_date && (
-                                <p className="text-[10px] text-slate-500 mt-4 italic">
-                                    Enviado el {new Date(user.trainer_note_date).toLocaleDateString()}
-                                </p>
+                                <div className="flex items-center justify-center gap-2 mt-6 relative z-10">
+                                    <span className="material-icons-round text-slate-300 text-xs">schedule</span>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                                        Enviado el {new Date(user.trainer_note_date).toLocaleDateString()}
+                                    </p>
+                                </div>
                             )}
                         </motion.div>
                     </div>
