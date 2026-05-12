@@ -21,17 +21,18 @@ class Config:
         "pool_pre_ping": True,
         "pool_recycle": 280,
         "pool_size": 5,
-        "max_overflow": 10,
-        "connect_timeout": 10
+        "max_overflow": 10
     }
+    
+    # Argumentos de conexión
+    connect_args = {}
     
     # Si estamos en Render y hay una DATABASE_URL, activamos SSL para Aiven
     if os.environ.get('DATABASE_URL') and 'render' not in os.environ.get('DATABASE_URL', ''):
-        SQLALCHEMY_ENGINE_OPTIONS["connect_args"] = {
-            "ssl": {
-                "ca": "/etc/ssl/certs/ca-certificates.crt" # Ruta estándar en Render/Linux
-            }
-        }
+        connect_args["ssl"] = {"ca": "/etc/ssl/certs/ca-certificates.crt"}
+        connect_args["connect_timeout"] = 10
+    
+    SQLALCHEMY_ENGINE_OPTIONS["connect_args"] = connect_args
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key'
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
