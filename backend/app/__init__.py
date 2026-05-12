@@ -57,6 +57,10 @@ def create_app(config_class=Config):
     from .routes.community import community_bp
     from .routes.admin import admin_bp
 
+    @app.route('/')
+    def index():
+        return jsonify({"status": "active", "api_version": "1.0", "message": "GymTrack Pro API"}), 200
+
     @app.route('/api/ping')
     def ping():
         return jsonify({"status": "ok", "message": "pong"}), 200
