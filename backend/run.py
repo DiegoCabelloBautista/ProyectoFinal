@@ -216,7 +216,8 @@ if __name__ == '__main__':
     else:
         print("Iniciando servidor Flask...")
     
-    # Iniciar siempre para que el contenedor no muera
-    print("Rutas registradas:")
-    print(app.url_map)
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    # Iniciar con puerto dinámico para Render
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    print(f"Iniciando servidor Flask en puerto {port}...")
+    app.run(host='0.0.0.0', port=port, debug=False)
