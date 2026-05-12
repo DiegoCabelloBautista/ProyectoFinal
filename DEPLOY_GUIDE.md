@@ -48,10 +48,18 @@ Vercel es perfecto para aplicaciones Vite.
 
 ---
 
-### Notas Finales 📝
-*   **CORS**: He modificado `backend/app/__init__.py` para que acepte los dominios configurados en `CORS_ALLOWED_ORIGINS`.
-*   **Rutas**: He añadido `frontend/vercel.json` para que las rutas de React funcionen correctamente al recargar la página.
-*   **API**: El frontend ahora usa `import.meta.env.VITE_API_URL` para saber a dónde enviar las peticiones.
-*   **Persistencia**: Render tiene un sistema de archivos efímero. Esto significa que las fotos de perfil (avatares) subidas se borrarán al reiniciar o redestinar el servicio. Para un TFG es aceptable, pero para producción real deberías usar Cloudinary o AWS S3.
+### Optimización: Evitar la lentitud (Hibernación) 😴⚡
+
+Como usas el plan gratuito de **Render**, el backend se "duerme" después de 15 minutos sin uso. Esto hace que la primera vez que entres a la web tarde hasta 30 segundos en cargar.
+
+Para evitar esto, he añadido un endpoint `/api/ping`. Sigue estos pasos:
+
+1.  Crea una cuenta gratuita en [UptimeRobot](https://uptimerobot.com/).
+2.  Crea un nuevo **Monitor**:
+    *   **Monitor Type**: HTTP(s)
+    *   **Friendly Name**: GymTrack Backend
+    *   **URL (or IP)**: `https://tu-backend.onrender.com/api/ping`
+    *   **Monitoring Interval**: Every 5 minutes (o 10 o 14).
+3.  ¡Listo! UptimeRobot hará una petición cada pocos minutos, impidiendo que Render apague tu servidor.
 
 ¡Mucha suerte con el TFG! Si tienes algún error en los logs de Render o Vercel, dímelo.

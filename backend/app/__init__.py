@@ -45,6 +45,10 @@ def create_app(config_class=Config):
     from .routes.community import community_bp
     from .routes.admin import admin_bp
 
+    @app.route('/api/ping')
+    def ping():
+        return jsonify({"status": "ok", "message": "pong"}), 200
+
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(exercises_bp, url_prefix='/api/exercises')
     app.register_blueprint(routines_bp, url_prefix='/api/routines')
