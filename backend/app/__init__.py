@@ -52,6 +52,30 @@ def create_app(config_class=Config):
     def ping():
         return jsonify({"status": "ok", "message": "pong"}), 200
 
+    @app.route('/api/fix-tildes')
+    def fix_tildes_root():
+        try:
+            from .models import Exercise, Routine, db
+            correcciones = {
+                "Jal??n": "Jalón", "Tr??ceps": "Tríceps", "B??ceps": "Bíceps",
+                "Pr??s": "Press", "Elevaci??n": "Elevación", "Extensi??n": "Extensión",
+                "Flexi??n": "Flexión", "Abdomi??n": "Abdomen", "Gimn??stico": "Gimnástico",
+                "Pector??l": "Pectoral", "D??a": "Día"
+            }
+            count = 0
+            for e in Exercise.query.all():
+                old = e.name
+                for r, f in correcciones.items(): e.name = e.name.replace(r, f)
+                if e.name != old: count += 1
+            for r in Routine.query.all():
+                old = r.name
+                for ro, fi in correcciones.items(): r.name = r.name.replace(ro, fi)
+                if r.name != old: count += 1
+            db.session.commit()
+            return jsonify({"msg": f"Reparados {count} textos", "status": "success"}), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(exercises_bp, url_prefix='/api/exercises')
     app.register_blueprint(routines_bp, url_prefix='/api/routines')
