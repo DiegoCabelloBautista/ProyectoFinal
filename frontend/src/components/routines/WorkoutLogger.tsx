@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { workoutsApi, routinesApi } from '../../services/api';
-import { Check, Clock, ChevronRight, Activity } from 'lucide-react';
+import { Check, Clock, ChevronRight, Activity, Plus, Minus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 
@@ -18,11 +18,59 @@ const WorkoutLogger: React.FC = () => {
     const [loadError, setLoadError] = useState<string | null>(null);
     const navigate = useNavigate();
 
+    // Inputs controlados para peso y reps
+    const [weightInput, setWeightInput] = useState('0');
+    const [repsInput, setRepsInput] = useState('0');
+    const bellRef = React.useRef<HTMLAudioElement | null>(null);
+
+    useEffect(() => {
+        // Usar archivo local para evitar problemas de bloqueo de URLs externas
+        bellRef.current = new Audio('/sounds/bell.mp3');
+        bellRef.current.volume = 1.0;
+        bellRef.current.load();
+    }, []);
+
+    // Recuperar series del ejercicio actual al cambiar de índice
+    useEffect(() => {
+        if (sessionId && routine && routine.exercises[currentExerciseIndex]) {
+            const fetchSets = async () => {
+                try {
+                    const res = await workoutsApi.getSessionDetail(sessionId);
+                    const currentEx = routine.exercises[currentExerciseIndex];
+                    const exId = currentEx.exercise_id ?? currentEx.id;
+                    const exData = res.data.exercises.find((e: any) => e.exercise_id === exId);
+                    if (exData) {
+                        setSets(exData.sets.map((s: any) => ({ weight: s.weight, reps: s.reps })));
+                    } else {
+                        setSets([]);
+                    }
+                } catch (err) {
+                    console.error("Error al recuperar series:", err);
+                }
+            };
+            fetchSets();
+        }
+    }, [currentExerciseIndex, sessionId, routine]);
+
     useEffect(() => {
         startWorkout();
         const interval = setInterval(() => {
             setTimer(t => t + 1);
-            setRestTimer(r => (r !== null && r > 0 ? r - 1 : (r === 0 ? null : r)));
+            setRestTimer(r => {
+                if (r === 1) {
+                    // Lógica de doble toque "ring-ring"
+                    const playBell = () => {
+                        if (bellRef.current) {
+                            bellRef.current.currentTime = 0;
+                            bellRef.current.play().catch(() => {});
+                        }
+                    };
+                    
+                    playBell();
+                    setTimeout(playBell, 300); // Segundo toque a los 300ms
+                }
+                return (r !== null && r > 0 ? r - 1 : (r === 0 ? null : r));
+            });
         }, 1000);
         return () => clearInterval(interval);
     }, []);
@@ -31,17 +79,9 @@ const WorkoutLogger: React.FC = () => {
         try {
             setLoadingSession(true);
             setLoadError(null);
-
-            console.log('[WorkoutLogger] routineId desde URL:', routineId);
-
-            // getById devuelve la rutina CON sus ejercicios completos
             const routineRes = await routinesApi.getById(Number(routineId));
             const routineData = routineRes.data;
 
-            console.log('[WorkoutLogger] Respuesta getById:', JSON.stringify(routineData));
-            console.log('[WorkoutLogger] exercises recibidos:', routineData.exercises);
-
-            // Normalizar: el endpoint devuelve 'exercise_name', el template espera 'name'
             const normalized = {
                 ...routineData,
                 exercises: (routineData.exercises ?? []).map((ex: any) => ({
@@ -49,16 +89,12 @@ const WorkoutLogger: React.FC = () => {
                     name: ex.exercise_name ?? ex.name ?? 'Ejercicio',
                 })),
             };
-
-            console.log('[WorkoutLogger] exercises normalizados:', normalized.exercises);
             setRoutine(normalized);
 
             const res = await workoutsApi.startSession(Number(routineId));
             setSessionId(res.data.id);
-            console.log('[WorkoutLogger] sessionId:', res.data.id);
         } catch (err: any) {
-            console.error('[WorkoutLogger] ERROR:', err?.response?.status, err?.response?.data || err);
-            setLoadError(`Error ${err?.response?.status ?? ''}: No se pudo cargar la rutina. Revisa la consola del navegador.`);
+            setLoadError(`Error: No se pudo cargar la rutina.`);
         } finally {
             setLoadingSession(false);
         }
@@ -66,11 +102,14 @@ const WorkoutLogger: React.FC = () => {
 
     const [isFinishing, setIsFinishing] = useState(false);
 
-    const logSet = async (weight: number, reps: number) => {
+    const logSet = async () => {
         if (!sessionId || !routine) return;
 
         const exercise = routine.exercises?.[currentExerciseIndex];
         if (!exercise) return;
+
+        const weight = Number(weightInput);
+        const reps = Number(repsInput);
 
         try {
             await workoutsApi.logSet({
@@ -81,7 +120,11 @@ const WorkoutLogger: React.FC = () => {
                 reps
             });
             setSets([...sets, { weight, reps }]);
-            setRestTimer(90); // Inicia descanso de 90 segundos por defecto
+            setRestTimer(90); // Descanso por defecto
+            
+            // RESET DE INPUTS a 0 tras registrar
+            setWeightInput('0');
+            setRepsInput('0');
         } catch (err) {
             console.error('Error al registrar la serie:', err);
         }
@@ -91,75 +134,53 @@ const WorkoutLogger: React.FC = () => {
 
     const finishWorkout = async () => {
         if (!sessionId || isFinishing) return;
-        
         setIsFinishing(true);
         try {
             const res = await workoutsApi.finishSession(sessionId);
             setSummary(res.data);
             await refreshUser();
-            // No navegamos inmediatamente para dejar ver el resumen
         } catch (err) {
-            console.error('Error al finalizar el entrenamiento:', err);
-            alert('No se pudo finalizar la sesión. Comprueba tu conexión.');
             setIsFinishing(false);
         }
     };
 
     if (summary) {
         return (
-        <div className="min-h-screen bg-white flex items-center justify-center p-6 text-center overflow-y-auto relative">
-            {/* Orbs de fondo */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
-                <div className="orb w-96 h-96 bg-primary -top-20 -right-20" />
-                <div className="orb w-80 h-80 bg-blue-500 bottom-20 -left-20" />
-            </div>
-
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="relative z-10 max-w-sm w-full bg-white rounded-[2.5rem] p-8 text-center shadow-2xl border border-slate-100"
-            >
-                <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-                    <span className="material-icons-round text-primary text-4xl">emoji_events</span>
-                </div>
-                <h2 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">¡Sesión Completada!</h2>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-8">Evoluciona tu mejor versión</p>
-                
-                <div className="grid grid-cols-2 gap-3 mb-8">
-                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">XP Ganada</p>
-                        <p className="text-xl font-black text-primary">+{summary.xp_gained_total}</p>
-                    </div>
-                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Racha</p>
-                        <p className="text-xl font-black text-orange-500">{summary.current_streak} d</p>
-                    </div>
-                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Nivel</p>
-                        <p className="text-xl font-black text-blue-500">{summary.level}</p>
-                    </div>
-                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Monedas</p>
-                        <p className="text-xl font-black text-yellow-500">{summary.coins}</p>
-                    </div>
+            <div className="min-h-screen bg-white flex items-center justify-center p-6 text-center overflow-y-auto relative">
+                <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-10">
+                    <div className="orb w-96 h-96 bg-primary -top-20 -right-20" />
+                    <div className="orb w-80 h-80 bg-blue-500 bottom-20 -left-20" />
                 </div>
 
-                    {summary.new_achievements && summary.new_achievements.length > 0 && (
-                        <div className="mb-8 space-y-3 text-left">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Logros Desbloqueados</p>
-                            {summary.new_achievements.map((ach: any) => (
-                                <div key={ach.id} className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-100 rounded-2xl p-4 flex items-center gap-4 shadow-sm">
-                                    <div className="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center text-white shadow-md">
-                                        <span className="material-icons-round text-lg">{ach.icon}</span>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-black text-slate-900">{ach.name}</p>
-                                        <p className="text-[10px] text-orange-500 font-bold uppercase">+{ach.coins_reward} monedas</p>
-                                    </div>
-                                </div>
-                            ))}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="relative z-10 max-w-sm w-full bg-white rounded-[2.5rem] p-8 text-center shadow-2xl border border-slate-100"
+                >
+                    <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                        <span className="material-icons-round text-primary text-4xl">emoji_events</span>
+                    </div>
+                    <h2 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">¡Sesión Completada!</h2>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-8">Evoluciona tu mejor versión</p>
+                    
+                    <div className="grid grid-cols-2 gap-3 mb-8">
+                        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                            <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">XP Ganada</p>
+                            <p className="text-xl font-black text-primary">+{summary.xp_gained_total}</p>
                         </div>
-                    )}
+                        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                            <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Racha</p>
+                            <p className="text-xl font-black text-orange-500">{summary.current_streak} d</p>
+                        </div>
+                        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                            <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Nivel</p>
+                            <p className="text-xl font-black text-blue-500">{summary.level}</p>
+                        </div>
+                        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                            <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Monedas</p>
+                            <p className="text-xl font-black text-yellow-500">{summary.coins}</p>
+                        </div>
+                    </div>
 
                     <button
                         onClick={() => navigate('/')}
@@ -200,39 +221,8 @@ const WorkoutLogger: React.FC = () => {
     const isLastExercise = currentExerciseIndex >= totalExercises - 1;
     const isCompleted = currentExerciseIndex >= totalExercises;
 
-    if (routine.exercises?.length === 0 || isCompleted) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-center px-6 bg-white relative overflow-hidden">
-                <div className="absolute inset-0 pointer-events-none opacity-10">
-                    <div className="orb w-96 h-96 bg-primary -top-20 -right-20" />
-                </div>
-                <span className="material-icons-round text-primary text-6xl mb-2">
-                    {routine.exercises?.length === 0 ? 'info' : 'verified'}
-                </span>
-                <p className="text-slate-900 font-black uppercase tracking-tight text-xl">
-                    {routine.exercises?.length === 0
-                        ? 'Rutina vacía'
-                        : '¡Entrenamiento completado!'}
-                </p>
-                {isCompleted && (
-                    <button
-                        onClick={finishWorkout}
-                        disabled={isFinishing}
-                        className="px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest bg-primary text-white shadow-lg shadow-emerald-500/20 disabled:opacity-50 active:scale-95 transition-all"
-                    >
-                        {isFinishing ? 'Guardando...' : '🏁 Finalizar Sesión'}
-                    </button>
-                )}
-                <button onClick={() => navigate('/routines')} className="px-6 py-3 text-slate-400 font-bold text-xs uppercase tracking-widest">
-                    Cancelar
-                </button>
-            </div>
-        );
-    }
-
     return (
         <div className="min-h-screen pb-40 bg-white text-slate-900 px-4 sm:px-6 pt-10 relative overflow-hidden">
-            {/* Orbs sutiles */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-5">
                 <div className="orb w-96 h-96 bg-primary -top-20 -right-20" />
                 <div className="orb w-80 h-80 bg-blue-500 bottom-20 -left-20" />
@@ -259,7 +249,7 @@ const WorkoutLogger: React.FC = () => {
                 <div className="flex items-start justify-between mb-6">
                     <div className="min-w-0">
                         <span className="text-[9px] text-white uppercase font-black tracking-[0.2em] bg-primary px-3 py-1 rounded-full shadow-sm shadow-emerald-500/20">Actual</span>
-                        <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-3 truncate">{currentExercise?.name || 'Cargando...'}</h2>
+                        <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-3 truncate">{currentExercise?.name || 'Ejercicio'}</h2>
                     </div>
                     <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 shrink-0">
                         <Activity className="text-primary w-6 h-6" />
@@ -270,19 +260,26 @@ const WorkoutLogger: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Peso (kg)</label>
-                            <input type="number" step="0.5" className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-4 text-2xl font-black text-slate-900 focus:outline-none focus:border-primary shadow-sm transition-all" defaultValue="0" id="weight" />
+                            <input 
+                                type="number" 
+                                step="0.5" 
+                                value={weightInput}
+                                onChange={(e) => setWeightInput(e.target.value)}
+                                className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-4 text-2xl font-black text-slate-900 focus:outline-none focus:border-primary shadow-sm transition-all" 
+                            />
                         </div>
                         <div>
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Reps</label>
-                            <input type="number" className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-4 text-2xl font-black text-slate-900 focus:outline-none focus:border-primary shadow-sm transition-all" defaultValue="0" id="reps" />
+                            <input 
+                                type="number" 
+                                value={repsInput}
+                                onChange={(e) => setRepsInput(e.target.value)}
+                                className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-4 text-2xl font-black text-slate-900 focus:outline-none focus:border-primary shadow-sm transition-all" 
+                            />
                         </div>
                     </div>
                     <button
-                        onClick={() => {
-                            const w = Number((document.getElementById('weight') as HTMLInputElement).value);
-                            const r = Number((document.getElementById('reps') as HTMLInputElement).value);
-                            logSet(w, r);
-                        }}
+                        onClick={logSet}
                         disabled={!sessionId}
                         className="w-full font-black text-xs uppercase tracking-[0.2em] py-5 rounded-2xl transition-all disabled:opacity-40 bg-slate-900 text-white shadow-xl shadow-slate-900/10 active:scale-[0.98]"
                     >
@@ -300,7 +297,7 @@ const WorkoutLogger: React.FC = () => {
                 ) : (
                     <div className="space-y-3">
                         {sets.map((set, i) => (
-                            <div key={i} className="bg-white border border-slate-100 rounded-2xl p-4 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-bottom-2">
+                            <div key={i} className="bg-white border border-slate-100 rounded-2xl p-4 flex items-center justify-between shadow-sm">
                                 <div className="flex items-center gap-4">
                                     <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-primary font-black text-xs border border-primary/20">{i + 1}</div>
                                     <span className="font-black text-slate-900">{set.weight} kg <span className="text-slate-400 mx-1">×</span> {set.reps}</span>
@@ -327,8 +324,14 @@ const WorkoutLogger: React.FC = () => {
                             </div>
                         </div>
                         <div className="flex gap-2">
-                            <button onClick={() => setRestTimer(r => (r || 0) + 30)} className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors flex items-center justify-center font-black text-[10px] text-white">
-                                +30s
+                            {/* Botones de ajuste fino -10s y +10s */}
+                            <button onClick={() => setRestTimer(r => Math.max(0, (r || 0) - 10))} className="h-10 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-1.5 border border-slate-700 shadow-sm group active:scale-95">
+                                <Minus className="w-3.5 h-3.5 text-white/50 group-hover:text-white transition-colors" />
+                                <span className="text-[10px] font-black text-white">10s</span>
+                            </button>
+                            <button onClick={() => setRestTimer(r => (r || 0) + 10)} className="h-10 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-1.5 border border-slate-700 shadow-sm group active:scale-95">
+                                <Plus className="w-3.5 h-3.5 text-white/50 group-hover:text-white transition-colors" />
+                                <span className="text-[10px] font-black text-white">10s</span>
                             </button>
                             <button onClick={() => setRestTimer(null)} className="px-4 h-10 rounded-xl bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all">
                                 Saltar
@@ -342,7 +345,8 @@ const WorkoutLogger: React.FC = () => {
                         disabled={currentExerciseIndex === 0}
                         onClick={() => {
                             setCurrentExerciseIndex(idx => Math.max(0, idx - 1));
-                            setSets([]);
+                            setWeightInput('0');
+                            setRepsInput('0');
                         }}
                     >
                         Anterior
@@ -350,8 +354,12 @@ const WorkoutLogger: React.FC = () => {
                     <button
                         className={`flex-1 font-black text-[10px] uppercase tracking-widest py-4 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg ${isLastExercise ? 'bg-slate-900 text-white shadow-slate-900/10' : 'bg-primary text-white shadow-emerald-500/20'}`}
                         onClick={() => {
-                            setCurrentExerciseIndex(idx => idx + 1);
-                            setSets([]);
+                            if (isLastExercise) finishWorkout();
+                            else {
+                                setCurrentExerciseIndex(idx => idx + 1);
+                                setWeightInput('0');
+                                setRepsInput('0');
+                            }
                         }}
                     >
                         {isLastExercise ? '✓ Terminar' : <>Siguiente <ChevronRight className="w-4 h-4" /></>}

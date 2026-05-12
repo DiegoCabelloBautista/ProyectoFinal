@@ -6,6 +6,8 @@ import {
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import { motion } from 'framer-motion';
+import MuscleHeatmap from './MuscleHeatmap';
+import TrainingCalendar from '../calendar/TrainingCalendar';
 
 const Analytics: React.FC = () => {
     const navigate = useNavigate();
@@ -320,58 +322,25 @@ const Analytics: React.FC = () => {
                     </ResponsiveContainer>
                 </motion.section>
 
-                {/* Volume by Muscle Group */}
+                {/* Muscle Heatmap Section */}
                 {volumeData.length > 0 && (
                     <motion.section
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
+                        transition={{ delay: 0.15 }}
                         className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-6 shadow-sm"
                     >
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center justify-between mb-6">
                             <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                                <span className="material-icons-round text-primary">pie_chart</span>
-                                Volumen por Grupo
+                                <span className="material-icons-round text-primary">person_search</span>
+                                Enfoque Muscular
                             </h2>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">30 días</span>
                         </div>
-                        <ResponsiveContainer width="100%" height={windowWidth < 640 ? 240 : 300}>
-                            <PieChart>
-                                <Pie
-                                    data={volumeData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={windowWidth < 640 ? 40 : 60}
-                                    outerRadius={windowWidth < 640 ? 80 : 100}
-                                    paddingAngle={5}
-                                    dataKey="volume"
-                                    nameKey="muscle_group"
-                                >
-                                    {volumeData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: '#FFFFFF',
-                                        border: '1px solid #E2E8F0',
-                                        borderRadius: '12px',
-                                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-                                        fontSize: '11px',
-                                        fontWeight: 'bold'
-                                    }}
-                                />
-                                <Legend 
-                                    layout={windowWidth < 640 ? "horizontal" : "vertical"} 
-                                    align={windowWidth < 640 ? "center" : "right"}
-                                    verticalAlign={windowWidth < 640 ? "bottom" : "middle"}
-                                    iconType="circle"
-                                    formatter={(value) => <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{value}</span>}
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        <MuscleHeatmap data={volumeData} />
                     </motion.section>
                 )}
+
+                {/* El PieChart ha sido sustituido por el MuscleHeatmap por ser más visual */}
 
                 {/* Personal Records */}
                 <motion.section
@@ -420,26 +389,20 @@ const Analytics: React.FC = () => {
                     )}
                 </motion.section>
 
-                {/* Training Heatmap */}
-                {heatmap.length > 0 && (
-                    <motion.section
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5 }}
-                        className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-6 shadow-sm"
-                    >
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                                <span className="material-icons-round text-primary">calendar_month</span>
-                                Frecuencia
-                            </h2>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">90 días</span>
-                        </div>
-                        <div className="text-center text-sm text-slate-500 py-4 font-medium">
-                            <p>📅 Has entrenado <span className="text-primary font-black">{heatmap.length}</span> días</p>
-                        </div>
-                    </motion.section>
-                )}
+                {/* Training Calendar Section */}
+                <motion.section
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                >
+                    <div className="flex items-center justify-between mb-4 px-2">
+                        <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                            <span className="material-icons-round text-primary">calendar_month</span>
+                            Actividad de Entrenamiento
+                        </h2>
+                    </div>
+                    <TrainingCalendar />
+                </motion.section>
             </main>
         </div>
     );
