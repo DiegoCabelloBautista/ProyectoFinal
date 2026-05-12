@@ -5,6 +5,30 @@ from datetime import datetime
 
 admin_bp = Blueprint('admin', __name__)
 
+@admin_bp.route('/fix-tildes', methods=['GET'])
+def fix_tildes_admin():
+    try:
+        from ..models import Exercise, Routine, db
+        correcciones = {
+            "Jal??n": "Jalón", "Tr??ceps": "Tríceps", "B??ceps": "Bíceps",
+            "Pr??s": "Press", "Elevaci??n": "Elevación", "Extensi??n": "Extensión",
+            "Flexi??n": "Flexión", "Abdomi??n": "Abdomen", "Gimn??stico": "Gimnástico",
+            "Pector??l": "Pectoral", "D??a": "Día"
+        }
+        count = 0
+        for e in Exercise.query.all():
+            old = e.name
+            for r, f in correcciones.items(): e.name = e.name.replace(r, f)
+            if e.name != old: count += 1
+        for r in Routine.query.all():
+            old = r.name
+            for ro, fi in correcciones.items(): r.name = r.name.replace(ro, fi)
+            if r.name != old: count += 1
+        db.session.commit()
+        return jsonify({"msg": f"Reparados {count} textos", "status": "success"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 def is_admin(user_id):
     user = User.query.get(user_id)
     return user and user.role == 'admin'
