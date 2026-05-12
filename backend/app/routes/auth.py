@@ -108,65 +108,6 @@ def me():
             traceback.print_exc(file=f)
         return jsonify({"msg": "Error al obtener datos de usuario", "error": str(e)}), 500
 
-@auth_bp.route('/fix-tildes', methods=['GET'])
-def fix_tildes():
-    try:
-        from ..models import Exercise, Routine, db
-        correcciones = {
-            "Jal??n": "Jalón", "Tr??ceps": "Tríceps", "B??ceps": "Bíceps",
-            "Pr??s": "Press", "Elevaci??n": "Elevación", "Extensi??n": "Extensión",
-            "Flexi??n": "Flexión", "Abdomi??n": "Abdomen", "Gimn??stico": "Gimnástico",
-            "Pector??l": "Pectoral", "D??a": "Día"
-        }
-        
-        exercises = Exercise.query.all()
-        count = 0
-        for e in exercises:
-            old_name = e.name
-            for roto, fixed in correcciones.items():
-                if roto in e.name: e.name = e.name.replace(roto, fixed)
-            if e.name != old_name: count += 1
-            
-        routines = Routine.query.all()
-        for r in routines:
-            old_name = r.name
-            for roto, fixed in correcciones.items():
-                if roto in r.name: r.name = r.name.replace(roto, fixed)
-            if r.name != old_name: count += 1
-            
-        db.session.commit()
-        return jsonify({"msg": f"Se han reparado {count} textos correctamente", "status": "success"}), 200
-    except Exception as e:
-        return jsonify({"msg": "Error al reparar", "error": str(e)}), 500
+        return jsonify({"msg": "Error al obtener datos de usuario", "error": str(e)}), 500
 
-@auth_bp.route('/fix-tildes', methods=['GET'])
-def fix_tildes():
-    try:
-        from ..models import Exercise, Routine, db
-        correcciones = {
-            "Jal??n": "Jalón", "Tr??ceps": "Tríceps", "B??ceps": "Bíceps",
-            "Pr??s": "Press", "Elevaci??n": "Elevación", "Extensi??n": "Extensión",
-            "Flexi??n": "Flexión", "Abdomi??n": "Abdomen", "Gimn??stico": "Gimnástico",
-            "Pector??l": "Pectoral", "D??a": "Día"
-        }
-        
-        exercises = Exercise.query.all()
-        count = 0
-        for e in exercises:
-            old_name = e.name
-            for roto, fixed in correcciones.items():
-                if roto in e.name: e.name = e.name.replace(roto, fixed)
-            if e.name != old_name: count += 1
-            
-        routines = Routine.query.all()
-        for r in routines:
-            old_name = r.name
-            for roto, fixed in correcciones.items():
-                if roto in r.name: r.name = r.name.replace(roto, fixed)
-            if r.name != old_name: count += 1
-            
-        db.session.commit()
-        return jsonify({"msg": f"Se han reparado {count} textos correctamente", "status": "success"}), 200
-    except Exception as e:
-        return jsonify({"msg": "Error al reparar", "error": str(e)}), 500
 
