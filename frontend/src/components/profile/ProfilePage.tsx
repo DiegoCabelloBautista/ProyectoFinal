@@ -193,14 +193,17 @@ const ProfilePage: React.FC = () => {
                     )}
 
                     {/* Level & XP */}
-                    <div className="flex items-center justify-center gap-3 sm:gap-6 mb-6">
-                        <div className="bg-slate-50/50 rounded-2xl px-5 py-3 border border-slate-100 flex-1 max-w-[120px]">
-                            <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Nivel</p>
-                            <p className="text-2xl font-black text-primary">{profile.level}</p>
+                    <div className="flex items-center justify-center gap-4 sm:gap-6 mb-6">
+                        <div className="bg-slate-50/50 rounded-2xl w-32 py-4 border border-slate-100 flex flex-col items-center justify-center shadow-sm">
+                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Nivel</p>
+                            <p className="text-3xl font-black text-primary leading-none">{profile.level}</p>
                         </div>
-                        <div className="bg-slate-50/50 rounded-2xl px-5 py-3 border border-slate-100 flex-1 max-w-[120px]">
-                            <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Monedas</p>
-                            <p className="text-2xl font-black text-yellow-600">💰{profile.coins}</p>
+                        <div className="bg-slate-50/50 rounded-2xl w-32 py-4 border border-slate-100 flex flex-col items-center justify-center shadow-sm">
+                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Monedas</p>
+                            <div className="flex items-center gap-1">
+                                <span className="text-xl">💰</span>
+                                <span className="text-3xl font-black text-yellow-600 leading-none">{profile.coins}</span>
+                            </div>
                         </div>
                     </div>
 

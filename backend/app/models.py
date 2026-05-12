@@ -76,16 +76,18 @@ class User(db.Model):
         if self.coins is None: self.coins = 0
         
         self.xp += final_xp
-        new_level = self.calculate_level()
+        
+        # Recalcular nivel basado siempre en la XP total para evitar errores
+        correct_level = self.calculate_level()
         
         res = {'level_up': False, 'applied_xp': final_xp}
         
-        # Si sube de nivel, dar recompensas
-        if new_level > self.level:
-            levels_gained = new_level - self.level
-            self.level = new_level
+        if correct_level > (self.level or 1):
+            levels_gained = correct_level - (self.level or 1)
+            self.level = correct_level
+            if self.coins is None: self.coins = 0
             self.coins += levels_gained * 10
-            res.update({'level_up': True, 'new_level': new_level, 'coins_earned': levels_gained * 10})
+            res.update({'level_up': True, 'new_level': correct_level, 'coins_earned': levels_gained * 10})
         
         return res
     

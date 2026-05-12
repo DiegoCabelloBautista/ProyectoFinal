@@ -73,6 +73,12 @@ def me():
         
         if not user:
             return jsonify({"msg": "Usuario no encontrado"}), 404
+            
+        # Sincronizar nivel si hay discrepancia por XP acumulada
+        correct_level = user.calculate_level()
+        if user.level != correct_level:
+            user.level = correct_level
+            db.session.commit()
         
         return jsonify({
             "id": user.id,
