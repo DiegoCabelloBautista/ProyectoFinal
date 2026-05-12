@@ -104,7 +104,7 @@ export const adminApi = {
     getClientStats: (clientId: number) => api.get(`/admin/coach/client/${clientId}/stats`),
     nudgeUser: (clientId: number, note: string) => api.post(`/admin/coach/client/${clientId}/nudge`, { note }),
     rewardUser: (clientId: number, amount: number) => api.post(`/admin/coach/client/${clientId}/reward`, { amount }),
-    assignRoutine: (clientId: number, routineId: number) => api.post(`/admin/coach/client/${clientId}/assign-routine`, { routineId }),
+    assignRoutine: (clientId: number, routineId: number) => api.post(`/admin/coach/client/${clientId}/assign-routine`, { routine_id: routineId }),
     clearNudge: () => api.post('/admin/coach/clear-nudge'),
 };
 
