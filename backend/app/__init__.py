@@ -28,9 +28,13 @@ def create_app(config_class=Config):
             # SEMBRAR BASE DE DATOS AUTOMÁTICAMENTE
             from .utils.seed import seed_everything
             seed_everything()
+
+            # SINCRONIZAR ESQUEMA (Añadir columnas faltantes)
+            from .utils.db_sync import sync_database_schema
+            sync_database_schema(app)
             
         except Exception as e:
-            app.logger.error(f"❌ FALLO DE CONEXIÓN O SEMBRADO DE DB: {str(e)}")
+            app.logger.error(f"❌ FALLO DE CONEXIÓN, SEMBRADO O SINCRONIZACIÓN DE DB: {str(e)}")
 
     migrate.init_app(app, db)
     jwt.init_app(app)
